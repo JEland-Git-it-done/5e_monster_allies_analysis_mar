@@ -182,10 +182,13 @@ def modular_names(dict_in):
 
 def form_files(data):
     #Aims to create a CSV, Excell and SQL version of the dataframe
-
-    data.to_csv("npcs.csv", index=False)
-    data.to_excel("npcs.xlsx", index=False)
-    data.to_sql()
+    if os.path.exists("npcs.csv") and os.path.exists("npcs.xlsx"):
+        print("These files already exist, skipping this step")
+    else:
+        data.to_csv("npcs.csv", index=False)
+        data.to_excel("npcs.xlsx", index=False)
+        #Continue Later
+        #data.to_sql()
 
 def form_npc_csv():
     #There is a strong argument to make this into an SQL file aswell, but for now CSV will do
