@@ -129,6 +129,17 @@ def italian_surnames():
     return df
 
 def form_name_dict():
+    if os.path.exists("npcs.csv") or os.path.exists("npcs.xlsx"):
+        try:
+            df_csv, df_xlsx= pd.read_csv("npcs.csv"), pd.read_excel("npcs.xlsx")
+            file_list = [df_csv, df_xlsx]
+            test_case = False
+            test_case = start_tests(file_list)
+        except:
+            pass
+    else:
+        #Move function here
+        print("Starting up Beautiful Soup")
     name_dict = {}
     nations = ["French", "Italian", "Spanish", "Turkish", "Dutch", "Danish", "Swedish",  "Polish"] #Test cases to see if wiktionary will take these as a real argument
     nation_abrev = ["FRA", "ITA", "SPA", "TUR", "DUT", "DAN", "SWE", "POL"]
@@ -161,6 +172,9 @@ def form_name_dict():
                         print("Not Found")
                         pass
                     print(adder)
+                    if adder == name_div[-1]:
+                        #Had to add this to fix the polish names set, should rework later
+                        divide = True
                     if not divide:
                         df = df.append({"name": adder, "tag": "M", "origin": "{}".format(nation_abrev[i])}, ignore_index=True)
                     else:
@@ -173,22 +187,20 @@ def form_name_dict():
 
     return df
 
+def start_tests(file_in):
+    print("Starting test case ...")
+    for i in range(len(file_in)):
+        df_arg = file_in[i]
+        df_temp = df_arg.loc[df_arg["origin"]]
+        print(df_temp)
 
-
-def modular_names(dict_in):
-    file = requests.get("https://en.wiktionary.org/wiki/Appendix:Italian_surnames")
-    soup = BeautifulSoup(file.content, "html.parser")
-    rec_data = soup.find_all()
 
 def form_files(data):
     #Aims to create a CSV, Excell and SQL version of the dataframe
-    if os.path.exists("npcs.csv") and os.path.exists("npcs.xlsx"):
-        print("These files already exist, skipping this step")
-    else:
-        data.to_csv("npcs.csv", index=False)
-        data.to_excel("npcs.xlsx", index=False)
-        #Continue Later
-        #data.to_sql()
+    data.to_csv("npcs.csv", index=False)
+    data.to_excel("npcs.xlsx", index=False)
+    #Continue Later
+    #data.to_sql()
 
 def form_npc_csv():
     #There is a strong argument to make this into an SQL file aswell, but for now CSV will do
