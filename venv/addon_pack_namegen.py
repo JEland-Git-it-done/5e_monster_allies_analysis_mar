@@ -128,33 +128,36 @@ def italian_surnames():
     print(df.tail(60))
     return df
 
+
+
 def form_name_dict():
+    test_case = False
     if os.path.exists("npcs.csv") or os.path.exists("npcs.xlsx"):
         try:
             df_csv, df_xlsx= pd.read_csv("npcs.csv"), pd.read_excel("npcs.xlsx")
             file_list = [df_csv, df_xlsx]
-            test_case = False
+
             test_case = start_tests(file_list)
         except:
             pass
-    else:
+    elif test_case == False:
         #Move function here
         print("Starting up Beautiful Soup")
     name_dict = {}
-    nations = ["French", "Italian", "Spanish", "Turkish", "Dutch", "Danish", "Swedish",  "Polish"] #Test cases to see if wiktionary will take these as a real argument
-    nation_abrev = ["FRA", "ITA", "SPA", "TUR", "DUT", "DAN", "SWE", "POL"]
-    probable_formats = ["dd", "dd", "dd", "dd", "li", "dd", "dd", "td"]
-    name_div = ["Abbée", "Abbondanza" "Abdianabel", "Abay", "Aafke", "Aase", "Aagot",  "Adela"]
-    name_fin = ["Zoëlle", "Zelmira", "Zulema", "Zekiye", "Zjarritjen", "Vibeke", "Öllegård", "Żywia"]
+    nations = ["French", "Italian", "Spanish", "Turkish", "Dutch", "Swedish",  "Polish"] #Test cases to see if wiktionary will take these as a real argument
+    nation_abrev = ["FRA", "ITA", "SPA", "TUR", "DUT", "SWE", "POL"]
+    probable_formats = ["dd", "dd", "dd", "dd", "li", "dd", "td"]
+    name_div = ["Abbée", "Abbondanza" "Abdianabel", "Abay", "Aafke", "Aagot",  "Adela"]
+    name_fin = ["Zoëlle", "Zelmira", "Zulema", "Zekiye", "Zjarritjen", "Öllegård", "Żywia"]
     df = pd.DataFrame(columns=["name", "tag", "origin"])
     for i in range(len(nations)):
         divide = False
         argument = "https://en.wiktionary.org/wiki/Appendix:{}_given_names".format(nations[i])
         file = requests.get(argument)
         print(str(file), "Iteration is {}".format(i), nations[i])
-        if str(file) in "<Response [404]>":
+        if str(file) == "<Response [404]>":
             pass
-        elif str(file) in "<Response [200]>":
+        elif str(file) == "<Response [200]>":
             soup = BeautifulSoup(file.content, "html.parser")
             rec_data = soup.find_all(probable_formats[i])
             for item in rec_data:
@@ -182,6 +185,7 @@ def form_name_dict():
     df["name"] = df["name"].str.replace("[^\w\s]", "")
     df = df.dropna(axis=0, how='any', thresh=None, subset=None, inplace=False)
     df = df.drop_duplicates(subset="name", keep="first")
+    print(df.loc[df["origin"] == "DAN"])
     form_files(df)
     print(df.tail(60))
 
@@ -189,10 +193,22 @@ def form_name_dict():
 
 def start_tests(file_in):
     print("Starting test case ...")
-    for i in range(len(file_in)):
-        df_arg = file_in[i]
-        df_temp = df_arg.loc[df_arg["origin"]]
-        print(df_temp)
+    nation_abrev = ["FRA", "ITA", "SPA", "TUR", "DUT", "SWE", "POL"]
+    correct_responses = []
+    for i in range(len(file_in)): #Goes through both files (csv and excel)
+        df_arg = file_in[i] #Created dataframe
+        for i in range(len(nation_abrev)): #Goes through each nationality present
+
+            #print(i) Test
+            df_temp = df_arg.loc[df_arg["origin"] == "{}".format(nation_abrev[i])] #Loads temp dataframe filled with nationality
+            print(df_temp)
+            if df_temp.size > 99: #If the temp file is bigger than 10, assume the DF is correctly loaded
+                print("Size is adequate")
+                correct_responses.append(i) #adds to list
+
+    if len(correct_responses) == len(nation_abrev) * 2:
+        print("Tests appear to be fine, can skip the BS4 implementation")
+        return True
 
 
 def form_files(data):
