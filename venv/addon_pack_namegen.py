@@ -138,62 +138,64 @@ def form_name_dict():
             file_list = [df_csv, df_xlsx]
 
             test_case = start_tests(file_list)
+            print("Boolean Value: ", test_case)
+            test_case = False
         except:
             pass
-    elif test_case == False:
-        #Move function here
-        print("Starting up Beautiful Soup")
-    name_dict = {}
-    nations = ["French", "Italian", "Spanish", "Turkish", "Dutch", "Swedish",  "Polish"] #Test cases to see if wiktionary will take these as a real argument
-    nation_abrev = ["FRA", "ITA", "SPA", "TUR", "DUT", "SWE", "POL"]
-    probable_formats = ["dd", "dd", "dd", "dd", "li", "dd", "td"]
-    name_div = ["Abbée", "Abbondanza" "Abdianabel", "Abay", "Aafke", "Aagot",  "Adela"]
-    name_fin = ["Zoëlle", "Zelmira", "Zulema", "Zekiye", "Zjarritjen", "Öllegård", "Żywia"]
-    df = pd.DataFrame(columns=["name", "tag", "origin"])
-    for i in range(len(nations)):
-        divide = False
-        argument = "https://en.wiktionary.org/wiki/Appendix:{}_given_names".format(nations[i])
-        file = requests.get(argument)
-        print(str(file), "Iteration is {}".format(i), nations[i])
-        if str(file) == "<Response [404]>":
-            pass
-        elif str(file) == "<Response [200]>":
-            soup = BeautifulSoup(file.content, "html.parser")
-            rec_data = soup.find_all(probable_formats[i])
-            for item in rec_data:
-                if item.string == name_div[i-1]:  # First female entry
-                    divide = True
-                if item.string == name_fin[i-1]:
-                    adder = str(item.string)
-                    df = df.append({"name": adder, "tag": "F", "origin": "{}".format(nation_abrev[i])}, ignore_index=True)
-                    break
-                if item.string is not None:
-                    adder = str(item.string)
-                    parts = re.split(r'[;,\s]\s*' , adder)#removes any double names that are not hyphinated
-                    adder = parts[0]
-                    if not adder.strip():
-                        print("Not Found")
-                        pass
-                    print(adder)
-                    if adder == name_div[-1]:
-                        #Had to add this to fix the polish names set, should rework later
-                        divide = True
-                    if not divide:
-                        df = df.append({"name": adder, "tag": "M", "origin": "{}".format(nation_abrev[i])}, ignore_index=True)
-                    else:
-                        df = df.append({"name": adder, "tag": "F", "origin": "{}".format(nation_abrev[i])}, ignore_index=True)
-    df["name"] = df["name"].str.replace("[^\w\s]", "")
-    df = df.dropna(axis=0, how='any', thresh=None, subset=None, inplace=False)
-    df = df.drop_duplicates(subset="name", keep="first")
-    print(df.loc[df["origin"] == "DAN"])
-    form_files(df)
-    print(df.tail(60))
+        if test_case == False:
+            #Move function here
+            print("Starting up Beautiful Soup")
+            name_dict = {}
+            nations = ["French", "Italian", "Spanish", "Turkish", "Dutch", "Swedish", "Polish", "Serbian"] #Test cases to see if wiktionary will take these as a real argument
+            nation_abrev = ["FRA", "ITA", "SPA", "TUR", "DUT", "SWE", "POL", "SRB"]
+            probable_formats = ["dd", "dd", "dd", "dd", "li", "dd", "td", "li"]
+            name_div = ["Abbée", "Abbondanza" "Abdianabel", "Abay", "Aafke", "Aagot",  "Adela", "Anica"]
+            name_fin = ["Zoëlle", "Zelmira", "Zulema", "Zekiye", "Zjarritjen", "Öllegård", "Żywia", "Sanja"]
+            df = pd.DataFrame(columns=["name", "tag", "origin"])
+            for i in range(len(nations)):
+                divide = False
+                argument = "https://en.wiktionary.org/wiki/Appendix:{}_given_names".format(nations[i])
+                file = requests.get(argument)
+                print(str(file), "Iteration is {}".format(i), nations[i])
+                if str(file) == "<Response [404]>":
+                    pass
+                elif str(file) == "<Response [200]>":
+                    soup = BeautifulSoup(file.content, "html.parser")
+                    rec_data = soup.find_all(probable_formats[i])
+                    for item in rec_data:
+                        if item.string == name_div[i-1]:  # First female entry
+                            divide = True
+                        if item.string == name_fin[i-1]:
+                            adder = str(item.string)
+                            df = df.append({"name": adder, "tag": "F", "origin": "{}".format(nation_abrev[i])}, ignore_index=True)
+                            break
+                        if item.string is not None:
+                            adder = str(item.string)
+                            parts = re.split(r'[;,\s]\s*' , adder)#removes any double names that are not hyphinated
+                            adder = parts[0]
+                            if not adder.strip():
+                                print("Not Found")
+                                pass
+                            print(adder)
+                            if adder == name_div[-1]:
+                                #Had to add this to fix the polish names set, should rework later
+                                divide = True
+                            if not divide:
+                                df = df.append({"name": adder, "tag": "M", "origin": "{}".format(nation_abrev[i])}, ignore_index=True)
+                            else:
+                                df = df.append({"name": adder, "tag": "F", "origin": "{}".format(nation_abrev[i])}, ignore_index=True)
+            df["name"] = df["name"].str.replace("[^\w\s]", "")
+            df = df.dropna(axis=0, how='any', thresh=None, subset=None, inplace=False)
+            df = df.drop_duplicates(subset="name", keep="first")
+            print(df.loc[df["origin"] == "DAN"])
+            form_files(df)
+            print(df.tail(60))
 
-    return df
+            return df
 
 def start_tests(file_in):
     print("Starting test case ...")
-    nation_abrev = ["FRA", "ITA", "SPA", "TUR", "DUT", "SWE", "POL"]
+    nation_abrev = ["FRA", "ITA", "SPA", "TUR", "DUT", "SWE", "POL", "SRB"]
     correct_responses = []
     for i in range(len(file_in)): #Goes through both files (csv and excel)
         df_arg = file_in[i] #Created dataframe
@@ -209,6 +211,8 @@ def start_tests(file_in):
     if len(correct_responses) == len(nation_abrev) * 2:
         print("Tests appear to be fine, can skip the BS4 implementation")
         return True
+    else:
+        return False
 
 
 def form_files(data):
