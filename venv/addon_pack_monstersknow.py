@@ -3,8 +3,10 @@ import pandas as pd; import numpy as np;
 import requests; import os.path;
 import nltk as nltk
 from nltk.corpus import stopwords; from nltk.cluster.util import cosine_distance; from nltk import pos_tag
+from nltk.stem import WordNetLemmatizer; from nltk.tokenize import sent_tokenize, word_tokenize
 import networkx as nx
 from bs4 import BeautifulSoup
+
 '''
 This section of the monster analysis pack focused on using the NLTK (or similar tools) to analyse
 The text found inside of the monsters know, a website dedicated to monster tactics http://themonstersknow.com/
@@ -30,6 +32,14 @@ def read_article(text):
     sentence_lst.pop()
     return sentence_lst
 
+def tfidf_summary(text):
+    token_sent = sent_tokenize(text)
+    text = text.replace("[^a-zA-Z0-9\s]", "")
+    text = re.sub(r'\d+', '', text)
+    token_word_stopwords = word_tokenize(text)
+    token_word = [word for word in token_word_stopwords if word not in alt_stopwords]
+    token_word = [word for word in token_word if len(word) > 1]
+    token_word = [word.lower() for word in token_word]
 def gen_summary(article, top_n):
     #Future development should look into using sentiment to guide output, find here http://www.nltk.org/howto/sentiment.html
     stop_words = stopwords.words("english")
@@ -114,7 +124,7 @@ def read_blogs():
         page_urls = ["cr-1-4", "cr-1-2"]
         print("Reading blogs this may take a while.")
         url_list, entry_dict = [], {} #list will be passed to another function to read sub pages
-        for i in range(21):
+        for i in range(21): #Max value of CR
             page_urls.append("cr-{}".format(i+1)) #Automating target pages
         print(page_urls)
 
