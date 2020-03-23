@@ -136,21 +136,20 @@ def form_name_dict():
         try:
             df_csv, df_xlsx= pd.read_csv("npcs.csv"), pd.read_excel("npcs.xlsx")
             file_list = [df_csv, df_xlsx]
-
             test_case = start_tests(file_list)
-            print("Boolean Value: ", test_case)
-            test_case = False
+            print("Test result: ", test_case)
+            #test_case = False
         except:
             pass
         if test_case == False:
             #Move function here
             print("Starting up Beautiful Soup")
             name_dict = {}
-            nations = ["French", "Italian", "Spanish", "Turkish", "Dutch", "Swedish", "Polish", "Serbian"] #Test cases to see if wiktionary will take these as a real argument
-            nation_abrev = ["FRA", "ITA", "SPA", "TUR", "DUT", "SWE", "POL", "SRB"]
-            probable_formats = ["dd", "dd", "dd", "dd", "li", "dd", "td", "li"]
-            name_div = ["Abbée", "Abbondanza" "Abdianabel", "Abay", "Aafke", "Aagot",  "Adela", "Anica"]
-            name_fin = ["Zoëlle", "Zelmira", "Zulema", "Zekiye", "Zjarritjen", "Öllegård", "Żywia", "Sanja"]
+            nations = ["French", "Italian", "Spanish", "Turkish", "Dutch", "Swedish", "Polish", "Serbian", "Irish"] #Test cases to see if wiktionary will take these as a real argument
+            nation_abrev = ["FRA", "ITA", "SPA", "TUR", "DUT", "SWE", "POL", "SRB", "IRE"]
+            probable_formats = ["dd", "dd", "dd", "dd", "li", "dd", "td", "li", "li"]
+            name_div = ["Abbée", "Abbondanza" "Abdianabel", "Abay", "Aafke", "Aagot",  "Adela", "Anica", "Aengus"]
+            name_fin = ["Zoëlle", "Zelmira", "Zulema", "Zekiye", "Zjarritjen", "Öllegård", "Żywia", "Vida", "Nóra"]
             df = pd.DataFrame(columns=["name", "tag", "origin"])
             for i in range(len(nations)):
                 divide = False
@@ -163,9 +162,10 @@ def form_name_dict():
                     soup = BeautifulSoup(file.content, "html.parser")
                     rec_data = soup.find_all(probable_formats[i])
                     for item in rec_data:
+                        print(item.string)
                         if item.string == name_div[i-1]:  # First female entry
                             divide = True
-                        if item.string == name_fin[i-1]:
+                        if item.string == name_fin[i]: # Last acceptable entry
                             adder = str(item.string)
                             df = df.append({"name": adder, "tag": "F", "origin": "{}".format(nation_abrev[i])}, ignore_index=True)
                             break
@@ -187,7 +187,6 @@ def form_name_dict():
             df["name"] = df["name"].str.replace("[^\w\s]", "")
             df = df.dropna(axis=0, how='any', thresh=None, subset=None, inplace=False)
             df = df.drop_duplicates(subset="name", keep="first")
-            print(df.loc[df["origin"] == "DAN"])
             form_files(df)
             print(df.tail(60))
 
@@ -195,7 +194,7 @@ def form_name_dict():
 
 def start_tests(file_in):
     print("Starting test case ...")
-    nation_abrev = ["FRA", "ITA", "SPA", "TUR", "DUT", "SWE", "POL", "SRB"]
+    nation_abrev = ["FRA", "ITA", "SPA", "TUR", "DUT", "SWE", "POL", "SRB", "IRE"]
     correct_responses = []
     for i in range(len(file_in)): #Goes through both files (csv and excel)
         df_arg = file_in[i] #Created dataframe

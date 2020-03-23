@@ -1,5 +1,5 @@
 from __future__ import absolute_import, division, print_function
-import pandas as pd; import numpy as np; from sqlalchemy import create_engine, sql
+import pandas as pd; import numpy as np;
 import requests; import os.path;
 import nltk as nltk
 from nltk.corpus import stopwords; from nltk.cluster.util import cosine_distance; from nltk import pos_tag
@@ -18,8 +18,10 @@ And pushing that through a machine learning function
 #The below functions relate to the NLTK ML library
 #Future development should focus on summarizing particular paragraphs as articles are usually split up into seperate monsters that are related to the over all type
 #https://towardsdatascience.com/understand-text-summarization-and-create-your-own-summarizer-in-python-b26a9f09fc70
+#Alternative implementation https://medium.com/voice-tech-podcast/automatic-extractive-text-summarization-using-tfidf-3fc9a7b26f5
+#intending to make changes, that the program summarizes each paragraph or section of article
 def read_article(text):
-    print("Reading : {}".format(text))
+    #print("Reading : {}".format(text))
     article = text.split(". ")
     sentence_lst = []
     for sentence in article:
@@ -155,7 +157,7 @@ def clean_data(df):
     sections = article.split(".Next: ")
     text = str(sections[0])
     sent_list = read_article(text)
-    num_sum = round(len(sent_list) * .20)
+    num_sum = round(len(sent_list) * .30)
 
     #read_article(text)
     gen_summary(text, num_sum)
