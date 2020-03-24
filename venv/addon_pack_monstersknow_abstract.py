@@ -1,15 +1,53 @@
 from __future__ import absolute_import, division, print_function
 import pandas as pd; import numpy as np;
-import requests; import os.path;
-import nltk as nltk
-from nltk.corpus import stopwords; from nltk.cluster.util import cosine_distance; from nltk import pos_tag
-from nltk.stem import WordNetLemmatizer; from nltk.tokenize import sent_tokenize, word_tokenize
-import networkx as nx
-from bs4 import BeautifulSoup
-alt_stopwords = set(stopwords.words('english'))
-wordlemmatizer = WordNetLemmatizer()
+import requests; import os.path; import re
+import spacy
+from spacy.lang.en.stop_words import STOP_WORDS
+from string import punctuation; from heapq import nlargest
 
-#Alternative implementation taken from here https://medium.com/voice-tech-podcast/automatic-extractive-text-summarization-using-tfidf-3fc9a7b26f5
+from bs4 import BeautifulSoup
+
+
+
+#Alternative implementation taken from here https://blog.floydhub.com/gentle-introduction-to-text-summarization-in-machine-learning/
+def alternate_summary(text):
+    text = text.replace("[^a-zA-Z0-9\s]", "")
+    print(text)
+    print(type(STOP_WORDS))
+    stopwords = list(STOP_WORDS) #Convert Set to list
+    nlp = spacy.load('en_core_web_sm')
+    doc_nlp = nlp(text)
+    #for token in docx: Test case of text output
+    #   print(token.text)
+    word_freq = {}
+    for word in doc_nlp:
+        if word.text not in stopwords:
+            if word.text not in word_freq.keys():
+                word_freq[word.text] = 1
+            else:
+                word_freq[word.text] += 1
+    print(word_freq)
+    max_freq = max(word_freq.values())
+    for word in word_freq.keys():
+        word_freq[word] = (word_freq[word]/max_freq) #creates sub 0 weights
+    sent_list = [sent for sent in doc_nlp.sents]
+    sent_score = dict()
+    for sent in sent_list:
+        for word in sent:
+            if word.text.lower() in word_freq.keys():
+                if len(sent.text.split(" ")) < 35:
+                    if sent not in sent_score.keys():
+                        sent_score[sent] = word_freq[word.text.lower()]
+                    else:
+                        sent_score[sent] += word_freq[word.text.lower()]
+    print(sent_score)
+    g = round(len(sent_list) * 0.35) #Variable that changes to ensure the summary is atleast
+    #using a number of sentances equal to 30% of the overall sentance size of main article
+    print(g)
+    summ_sentances = nlargest(g, sent_score, key=sent_score.get)
+
+
+    
 
 def read_blogs():
     if os.path.exists("articles.xlsx"):
@@ -70,15 +108,18 @@ def form_df(entry_dict):
 
 def clean_text(df_targ):
     article = str(df_targ["text"].values)
-    sections = article.split(".Next: ")
+    sections = article.split("Next: ")
     text = str(sections[0])
     return text
+
 def find_article():
     df = read_blogs()
     df = df.sample(1)
     target_text = clean_text(df)
-    print(target_text)
+    #print(target_text)
+    return target_text
 
 
 
 find_article()
+alternate_summary(text=find_article())
