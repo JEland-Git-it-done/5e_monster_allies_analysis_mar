@@ -32,14 +32,7 @@ def read_article(text):
     sentence_lst.pop()
     return sentence_lst
 
-def tfidf_summary(text):
-    token_sent = sent_tokenize(text)
-    text = text.replace("[^a-zA-Z0-9\s]", "")
-    text = re.sub(r'\d+', '', text)
-    token_word_stopwords = word_tokenize(text)
-    token_word = [word for word in token_word_stopwords if word not in alt_stopwords]
-    token_word = [word for word in token_word if len(word) > 1]
-    token_word = [word.lower() for word in token_word]
+
 def gen_summary(article, top_n):
     #Future development should look into using sentiment to guide output, find here http://www.nltk.org/howto/sentiment.html
     stop_words = stopwords.words("english")
@@ -164,7 +157,7 @@ def clean_data(df):
     print("Starting up the machine learning, this should either be done by scrapping the site using beautiful soup, or via an SQL or CSV file that has been printed to and read from")
     df_targ = df.loc[df["article_id"] == "Angel Tactics"] #Test case using one article, future case will use for loop and iteration, reminder https://stackoverflow.com/questions/16476924/how-to-iterate-over-rows-in-a-dataframe-in-pandas
     article = str(df_targ["text"].values)
-    sections = article.split(".Next: ")
+    sections = article.split("Next: ")
     text = str(sections[0])
     sent_list = read_article(text)
     num_sum = round(len(sent_list) * .30)
