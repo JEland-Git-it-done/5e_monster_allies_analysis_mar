@@ -9,8 +9,9 @@ from bs4 import BeautifulSoup
 #https://www.europeandataportal.eu/data/datasets?locale=en&tags=vornamen&keywords=vornamen
 #Changed idea to read wikipedia pages eg. https://en.wikipedia.org/w/index.php?title=Category:German-language_surnames&pagefrom=Eschenbach%0AEschenbach+%28surname%29#mw-pages
 #https://archaeologydataservice.ac.uk/archives/view/atlas_ahrb_2005/datasets.cfm?CFID=331341&CFTOKEN=70517262
-#Any information taken from https://www.europeandataportal.eu is being used under the Creative Commons Share-Alike Attribution Licence (CC-BY-SA).
+#Any information taken from https://www.europeandataportal.eu is being used under the Creative Commons Share-Alike Attribution Licence (CC-BY-SA), none is currently being used.
 #Arcane name set seems like a useful idea, see text below
+#Look into GeoNames dataset found here, https://github.com/awesomedata/awesome-public-datasets , could be used for expanded town name generator
 '''
 Courtesy of u/Alazypanda -
 If need random fantastical sounding names I quite literally take the "generic" or chemical names of medication
@@ -138,18 +139,22 @@ def form_name_dict():
             file_list = [df_csv, df_xlsx]
             test_case = start_tests(file_list)
             print("Test result: ", test_case)
-            #test_case = False
+            test_case = False
         except:
             pass
         if test_case == False:
             #Move function here
             print("Starting up Beautiful Soup")
             name_dict = {}
-            nations = ["French", "Italian", "Spanish", "Turkish", "Dutch", "Swedish", "Polish", "Serbian", "Irish"] #Test cases to see if wiktionary will take these as a real argument
-            nation_abrev = ["FRA", "ITA", "SPA", "TUR", "DUT", "SWE", "POL", "SRB", "IRE"]
-            probable_formats = ["dd", "dd", "dd", "dd", "li", "dd", "td", "li", "li"]
-            name_div = ["Abbée", "Abbondanza" "Abdianabel", "Abay", "Aafke", "Aagot",  "Adela", "Anica", "Aengus"]
-            name_fin = ["Zoëlle", "Zelmira", "Zulema", "Zekiye", "Zjarritjen", "Öllegård", "Żywia", "Vida", "Nóra"]
+            nations = ["French", "Italian", "Spanish", "Turkish", "Dutch", "Swedish", "Polish", "Serbian", "Irish",
+                       "Czech", "Hungarian", "Russian"] #Test cases to see if wiktionary will take these as a real argument
+            nation_abrev = ["FRA", "ITA", "SPA", "TUR", "DUT", "SWE", "POL", "SRB", "IRE",
+                            "CZE", "MAG"]
+            probable_formats = ["dd", "dd", "dd", "dd", "li", "dd", "td", "li", "li", "dd", "dd"]
+            name_div = ["Abbée", "Abbondanza" "Abdianabel", "Abay", "Aafke", "Aagot",  "Adela", "Anica",
+                        "Aengus", "Ada", "Abigél"]
+            name_fin = ["Zoëlle", "Zelmira", "Zulema", "Zekiye", "Zjarritjen", "Öllegård", "Żywia",
+                        "Vida", "Nóra", "Zorka", "Zseraldin"]
             df = pd.DataFrame(columns=["name", "tag", "origin"])
             for i in range(len(nations)):
                 divide = False
@@ -187,6 +192,7 @@ def form_name_dict():
             df["name"] = df["name"].str.replace("[^\w\s]", "")
             df = df.dropna(axis=0, how='any', thresh=None, subset=None, inplace=False)
             df = df.drop_duplicates(subset="name", keep="first")
+            form_translate_non_latin()
             form_files(df)
             print(df.tail(60))
 
