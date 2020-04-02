@@ -1,6 +1,7 @@
 import pandas as pd; import numpy as np;
 import requests; import os; import re
 from bs4 import BeautifulSoup
+import transliterate as translit
 
 
 
@@ -136,23 +137,25 @@ def form_name_dict():
     test_decision = True
     name_dict = {}
     nations = ["French", "Italian", "Spanish", "Turkish", "Dutch", "Swedish", "Polish", "Serbian", "Irish",
-                       "Czech", "Hungarian"] #Test cases to see if wiktionary will take these as a real argument
+                       "Czech", "Hungarian", "Russian"] #Test cases to see if wiktionary will take these as a real argument
     nation_abrev = ["FRA", "ITA", "SPA", "TUR", "DUT", "SWE", "POL", "SRB", "IRE",
-                            "CZE", "HUN"]
-    probable_formats = ["dd", "dd", "dd", "dd", "li", "dd", "td", "li", "li", "dd", "dd"]
+                            "CZE", "HUN", "RUS"]
+    probable_formats = ["dd", "dd", "dd", "dd", "li", "dd", "td", "li", "li", "dd", "dd", "td"]
     name_div = ["Abbée", "Abbondanza" "Abdianabel", "Abay", "Aafke", "Aagot",  "Adela", "Anica",
-                        "Aengus", "Ada", "Adél"]
+                        "Aengus", "Ada", "Adél", "Авдотья"]
     name_fin = ["Zoëlle", "Zelmira", "Zulema", "Zekiye", "Zjarritjen", "Öllegård", "Żywia",
-                        "Vida", "Nóra", "Zorka", "Zseraldin"]
+                        "Vida", "Nóra", "Zorka", "Zseraldin", "Ярослава"]
     if os.path.exists("npcs.csv") or os.path.exists("npcs.xlsx"):
         print("File already exists")
         try:
             df_csv, df_xlsx= pd.read_csv("npcs.csv"), pd.read_excel("npcs.xlsx")
             file_list = [df_csv, df_xlsx]
             test_case = start_tests(file_list, nation_abrev)
+            #form_non_latin(file_list)
             print("Test result: ", test_case)
-            test_decision = start_soup(test_case)
-            print("Test case: ", test_decision)
+            print(test_case)
+            test_case = start_soup(test_case)
+
             #If you decide you need to add new names, please ensure you have added the following things
             #1. The nations name, relative to the wikipedia article, for instance https://en.wiktionary.org/wiki/Appendix:Russian_given_names
             #2. The nations abreviation, eg ENG for english
@@ -160,25 +163,24 @@ def form_name_dict():
             #4. The first female name to change the gender type from male to female
             #5. The last name needed, as an end point (As wikipedia often adds extra things to the end of a file using
             #The HTML type that is being read by BS4)
+            if test_case == False:
+                #Move function here
+                print("Starting up Beautiful Soup")
+
+                df = pd.DataFrame(columns=["name", "tag", "origin"])
+                df = add_names(df, name_div, name_fin, nation_abrev, nations, probable_formats)
+                form_files(df)
+                print(df.tail(60))
+
+                return df
+            else:
+                return df_csv
         except:
             pass
-        if test_decision == False:
-            #Move function here
-            print("Starting up Beautiful Soup")
-
-            df = pd.DataFrame(columns=["name", "tag", "origin"])
-            df = add_names(df, name_div, name_fin, nation_abrev, nations, probable_formats)
-
-            form_files(df)
-            print(df.tail(60))
-
-            return df
     else:
         print("File does not exist, starting up Beautiful Soup and creating files")
-
         df = pd.DataFrame(columns=["name", "tag", "origin"])
         df = add_names(df, name_div, name_fin, nation_abrev, nations, probable_formats)
-        form_non_latin()
         form_files(df)
         print(df.tail(60))
 
@@ -189,18 +191,19 @@ def start_soup(add_decision):
     input_finish = False
     while not input_finish:
         print("Do you need to add new names? [y/n?]")
-        answer = input()
-        affermatives = ["y", "yes", "yeh"]
-        negatives = ["n", "no", "nah"]
-        if answer.lower() in affirmatives:
+
+        answer = input("\n\n\n")
+        if answer.lower() == "y":
+            print("Adding new files")
             add_decision = False
             input_finish = True
-        elif answer.lower() in negatives:
-            test_case = test_case
+        elif answer.lower() == "n":
+            print("Returing Dataframe")
+            add_decision = True
             input_finish = True
         else:
             print("That is an invalid input, please type either Y or N")
-    return test_case
+    return add_decision
 
 
 def add_names(df, name_div, name_fin, nation_abrev, nations, probable_formats):
@@ -246,9 +249,9 @@ def add_names(df, name_div, name_fin, nation_abrev, nations, probable_formats):
     return df
 
 
-def start_tests(file_in, nation_name):
+def start_tests(file_in, nation):
     print("Starting test case ...")
-    nation_abrev = nation_name
+    nation_abrev = nation
     correct_responses = []
     for i in range(len(file_in)): #Goes through both files (csv and excel)
         df_arg = file_in[i] #Created dataframe
@@ -267,12 +270,27 @@ def start_tests(file_in, nation_name):
     else:
         return False
 
-def form_non_latin():
+def form_non_latin(df_list):
     #This function will first add names that are in non latin cases, eg. russian names and
     #Will translate them along with any other names that already exist in the DF
-    nations = ["Russian"]
-    abrev = ["RUS"]
-    format = ["td"]
+    translations = []
+    for i in range(len(df_list)):
+        print("*\n*\n*\n*\n*\n")
+        df = df_list[i]
+        for column in df.columns:
+            unique_el = df[column].unique()
+            for element in unique_el:
+                translations[element] = translit(element).text
+
+        print(translations)
+
+        df = df.loc[df["origin"] == "RUS"]
+        for row in df.iterrows():
+            print("Translating ...")
+            print(translit(df["name"].values, "ru", reversed=True))
+        print(df)
+
+
     pass
 
 
