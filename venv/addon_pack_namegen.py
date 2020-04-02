@@ -139,7 +139,14 @@ def form_name_dict():
             file_list = [df_csv, df_xlsx]
             test_case = start_tests(file_list)
             print("Test result: ", test_case)
-            test_case = False
+            test_case = start_soup(test_case)
+            #If you decide you need to add new names, please ensure you have added the following things
+            #1. The nations name, relative to the wikipedia article, for instance https://en.wiktionary.org/wiki/Appendix:Russian_given_names
+            #2. The nations abreviation, eg ENG for english
+            #3. The format of the HTML that is being used to hold the names
+            #4. The first female name to change the gender type from male to female
+            #5. The last name needed, as an end point (As wikipedia often adds extra things to the end of a file using
+            #The HTML type that is being read by BS4)
         except:
             pass
         if test_case == False:
@@ -147,60 +154,85 @@ def form_name_dict():
             print("Starting up Beautiful Soup")
             name_dict = {}
             nations = ["French", "Italian", "Spanish", "Turkish", "Dutch", "Swedish", "Polish", "Serbian", "Irish",
-                       "Czech", "Hungarian", "Russian"] #Test cases to see if wiktionary will take these as a real argument
+                       "Czech", "Hungarian"] #Test cases to see if wiktionary will take these as a real argument
             nation_abrev = ["FRA", "ITA", "SPA", "TUR", "DUT", "SWE", "POL", "SRB", "IRE",
-                            "CZE", "MAG"]
+                            "CZE", "HUN"]
             probable_formats = ["dd", "dd", "dd", "dd", "li", "dd", "td", "li", "li", "dd", "dd"]
             name_div = ["Abbée", "Abbondanza" "Abdianabel", "Abay", "Aafke", "Aagot",  "Adela", "Anica",
-                        "Aengus", "Ada", "Abigél"]
+                        "Aengus", "Ada", "Adél"]
             name_fin = ["Zoëlle", "Zelmira", "Zulema", "Zekiye", "Zjarritjen", "Öllegård", "Żywia",
                         "Vida", "Nóra", "Zorka", "Zseraldin"]
             df = pd.DataFrame(columns=["name", "tag", "origin"])
-            for i in range(len(nations)):
-                divide = False
-                argument = "https://en.wiktionary.org/wiki/Appendix:{}_given_names".format(nations[i])
-                file = requests.get(argument)
-                print(str(file), "Iteration is {}".format(i), nations[i])
-                if str(file) == "<Response [404]>":
-                    pass
-                elif str(file) == "<Response [200]>":
-                    soup = BeautifulSoup(file.content, "html.parser")
-                    rec_data = soup.find_all(probable_formats[i])
-                    for item in rec_data:
-                        print(item.string)
-                        if item.string == name_div[i-1]:  # First female entry
-                            divide = True
-                        if item.string == name_fin[i]: # Last acceptable entry
-                            adder = str(item.string)
-                            df = df.append({"name": adder, "tag": "F", "origin": "{}".format(nation_abrev[i])}, ignore_index=True)
-                            break
-                        if item.string is not None:
-                            adder = str(item.string)
-                            parts = re.split(r'[;,\s]\s*' , adder)#removes any double names that are not hyphinated
-                            adder = parts[0]
-                            if not adder.strip():
-                                print("Not Found")
-                                pass
-                            print(adder)
-                            if adder == name_div[-1]:
-                                #Had to add this to fix the polish names set, should rework later
-                                divide = True
-                            if not divide:
-                                df = df.append({"name": adder, "tag": "M", "origin": "{}".format(nation_abrev[i])}, ignore_index=True)
-                            else:
-                                df = df.append({"name": adder, "tag": "F", "origin": "{}".format(nation_abrev[i])}, ignore_index=True)
-            df["name"] = df["name"].str.replace("[^\w\s]", "")
-            df = df.dropna(axis=0, how='any', thresh=None, subset=None, inplace=False)
-            df = df.drop_duplicates(subset="name", keep="first")
+            df = add_names(df, name_div, name_fin, nation_abrev, nations, probable_formats)
             form_translate_non_latin()
             form_files(df)
             print(df.tail(60))
 
             return df
 
+
+def start_soup(test_case):
+    input_finish = False
+    while not input_finish:
+        print("Do you need to add new names? [y/n?]")
+        answer = input()
+        if answer.lower() == "y":
+            test_case = False
+            input_finish = True
+        elif answer.lower() == "n":
+            test_case = test_case
+            input_finish = True
+        else:
+            print("That is an invalid input, please type either Y or N")
+    return test_case
+
+
+def add_names(df, name_div, name_fin, nation_abrev, nations, probable_formats):
+    for i in range(len(nations)):
+        divide = False
+        argument = "https://en.wiktionary.org/wiki/Appendix:{}_given_names".format(nations[i])
+        file = requests.get(argument)
+        print(str(file), "Iteration is {}".format(i), nations[i])
+        if str(file) == "<Response [404]>":
+            pass
+        elif str(file) == "<Response [200]>":
+            soup = BeautifulSoup(file.content, "html.parser")
+            rec_data = soup.find_all(probable_formats[i])
+            for item in rec_data:
+                print(item.string)
+                if item.string == name_div[i - 1]:  # First female entry
+                    divide = True
+                if item.string == name_fin[i]:  # Last acceptable entry
+                    adder = str(item.string)
+                    df = df.append({"name": adder, "tag": "F", "origin": "{}".format(nation_abrev[i])},
+                                   ignore_index=True)
+                    break
+                if item.string is not None:
+                    adder = str(item.string)
+                    parts = re.split(r'[;,\s]\s*', adder)  # removes any double names that are not hyphinated
+                    adder = parts[0]
+                    if not adder.strip():
+                        print("Not Found")
+                        pass
+                    print(adder)
+                    if adder == name_div[-1]:
+                        # Had to add this to fix the polish names set, should rework later
+                        divide = True
+                    if not divide:
+                        df = df.append({"name": adder, "tag": "M", "origin": "{}".format(nation_abrev[i])},
+                                       ignore_index=True)
+                    else:
+                        df = df.append({"name": adder, "tag": "F", "origin": "{}".format(nation_abrev[i])},
+                                       ignore_index=True)
+    df["name"] = df["name"].str.replace("[^\w\s]", "")
+    df = df.dropna(axis=0, how='any', thresh=None, subset=None, inplace=False)
+    df = df.drop_duplicates(subset="name", keep="first")
+    return df
+
+
 def start_tests(file_in):
     print("Starting test case ...")
-    nation_abrev = ["FRA", "ITA", "SPA", "TUR", "DUT", "SWE", "POL", "SRB", "IRE"]
+    nation_abrev = ["FRA", "ITA", "SPA", "TUR", "DUT", "SWE", "POL", "SRB", "IRE", "CZE", "HUN"]
     correct_responses = []
     for i in range(len(file_in)): #Goes through both files (csv and excel)
         df_arg = file_in[i] #Created dataframe
@@ -218,6 +250,11 @@ def start_tests(file_in):
         return True
     else:
         return False
+
+def form_translate_non_latin():
+    #This function will first add names that are in non latin cases, eg. russian names and
+    #Will translate them along with any other names that already exist in the DF
+    pass
 
 
 def form_files(data):
