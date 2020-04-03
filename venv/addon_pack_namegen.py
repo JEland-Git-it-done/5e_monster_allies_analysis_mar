@@ -281,16 +281,16 @@ def form_non_latin():
 
         df = df.loc[df["origin"] == "RUS"]
         for index, row in df.iterrows():
-            print("Translating ...", index, row)
-            row = list(row[1])
+            print("Translating ...", type(row))
+            name = row[0]
             print(row)
-            print(translit(row[0], "ru", reversed=True))
-            latin_name = translit(row[0], "ru", reversed=True)
+            print(translit(name, "ru", reversed=True))
+            latin_name = translit(name, "ru", reversed=True)
             df.at[index, "name"] = latin_name
     print(df)
 
 
-
+    pass
 
 
 def form_files(data):
