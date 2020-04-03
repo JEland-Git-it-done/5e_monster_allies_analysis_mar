@@ -1,7 +1,7 @@
 import pandas as pd; import numpy as np;
 import requests; import os; import re
 from bs4 import BeautifulSoup
-from transliterate import translit
+from transliterate import translit, detect_language
 
 
 
@@ -281,12 +281,16 @@ def form_non_latin():
 
         df = df.loc[df["origin"] == "RUS"]
         for index, row in df.iterrows():
-            print("Translating ...", type(row))
+
             name = row[0]
-            print(row)
-            print(translit(name, "ru", reversed=True))
-            latin_name = translit(name, "ru", reversed=True)
-            df.at[index, "name"] = latin_name
+            language_code = detect_language(name)
+            if language_code is not None:
+                print("Translating ...")
+                print(language_code)
+                print(row)
+                print(translit(name, "{}".format(language_code), reversed=True))
+                latin_name = translit(name, "{}".format(language_code), reversed=True)
+                df.at[index, "name"] = latin_name
     print(df)
 
 
