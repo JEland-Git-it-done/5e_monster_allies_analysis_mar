@@ -273,15 +273,12 @@ def start_tests(file_in, nation):
 def form_non_latin():
     #This function will first add names that are in non latin cases, eg. russian names and
     #Will translate them along with any other names that already exist in the DF
-    translations = []
+    non_latin_languages = ["RUS", "SRB"]
     df = form_name_dict()
     print("*\n*\n*\n*\n*\n")
     for column in df.columns:
-        print(translations)
-
-        df = df.loc[df["origin"] == "RUS"]
+        df = df.loc[(df["origin"] == "SRB") | (df["origin"] == "RUS")]
         for index, row in df.iterrows():
-
             name = row[0]
             language_code = detect_language(name)
             if language_code is not None:
