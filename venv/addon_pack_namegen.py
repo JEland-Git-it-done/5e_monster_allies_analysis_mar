@@ -1,7 +1,7 @@
 import pandas as pd; import numpy as np;
 import requests; import os; import re
 from bs4 import BeautifulSoup
-import transliterate as translit
+from transliterate import translit
 
 
 
@@ -270,28 +270,27 @@ def start_tests(file_in, nation):
     else:
         return False
 
-def form_non_latin(df_list):
+def form_non_latin():
     #This function will first add names that are in non latin cases, eg. russian names and
     #Will translate them along with any other names that already exist in the DF
     translations = []
-    for i in range(len(df_list)):
-        print("*\n*\n*\n*\n*\n")
-        df = df_list[i]
-        for column in df.columns:
-            unique_el = df[column].unique()
-            for element in unique_el:
-                translations[element] = translit(element).text
-
+    df = form_name_dict()
+    print("*\n*\n*\n*\n*\n")
+    for column in df.columns:
         print(translations)
 
         df = df.loc[df["origin"] == "RUS"]
-        for row in df.iterrows():
-            print("Translating ...")
-            print(translit(df["name"].values, "ru", reversed=True))
-        print(df)
+        for index, row in df.iterrows():
+            print("Translating ...", index, row)
+            row = list(row[1])
+            print(row)
+            print(translit(row[0], "ru", reversed=True))
+            latin_name = translit(row[0], "ru", reversed=True)
+            df.at[index, "name"] = latin_name
+    print(df)
 
 
-    pass
+
 
 
 def form_files(data):
@@ -313,4 +312,4 @@ def form_npc_csv():
     #DF outputs duplicated even though duplicates are dropped above, needs to be fixed
 
 
-form_name_dict()
+form_non_latin()
