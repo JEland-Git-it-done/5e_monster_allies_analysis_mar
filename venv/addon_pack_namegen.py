@@ -151,10 +151,12 @@ def form_name_dict():
             df_csv, df_xlsx= pd.read_csv("npcs.csv"), pd.read_excel("npcs.xlsx")
             file_list = [df_csv, df_xlsx]
             test_case = start_tests(file_list, nation_abrev)
+
             #form_non_latin(file_list)
             print("Test result: ", test_case)
             print(test_case)
             test_case = start_soup(test_case)
+            df_stable = form_non_latin(df_csv)
 
             #If you decide you need to add new names, please ensure you have added the following things
             #1. The nations name, relative to the wikipedia article, for instance https://en.wiktionary.org/wiki/Appendix:Russian_given_names
@@ -174,7 +176,7 @@ def form_name_dict():
 
                 return df
             else:
-                return df_csv
+                return df_stable
         except:
             pass
     else:
@@ -270,15 +272,14 @@ def start_tests(file_in, nation):
     else:
         return False
 
-def form_non_latin():
+def form_non_latin(df):
     #This function will first add names that are in non latin cases, eg. russian names and
     #Will translate them along with any other names that already exist in the DF
     non_latin_languages = ["RUS", "SRB"]
-    df = form_name_dict()
     print("*\n*\n*\n*\n*\n")
     for column in df.columns:
-        df = df.loc[(df["origin"] == "SRB") | (df["origin"] == "RUS")]
-        for index, row in df.iterrows():
+        df_copy = df.loc[(df["origin"] == "SRB") | (df["origin"] == "RUS")]
+        for index, row in df_copy.iterrows():
             name = row[0]
             language_code = detect_language(name)
             if language_code is not None:
@@ -289,9 +290,8 @@ def form_non_latin():
                 latin_name = translit(name, "{}".format(language_code), reversed=True)
                 df.at[index, "name"] = latin_name
     print(df)
+    return df
 
-
-    pass
 
 
 def form_files(data):
@@ -313,4 +313,5 @@ def form_npc_csv():
     #DF outputs duplicated even though duplicates are dropped above, needs to be fixed
 
 
-form_non_latin()
+df = form_name_dict()
+print(df)
