@@ -172,6 +172,7 @@ def form_name_dict():
                 df = pd.DataFrame(columns=["name", "tag", "origin"])
                 df = add_names(df, name_div, name_fin, nation_abrev, nations, probable_formats)
                 form_files(df)
+                df = form_non_latin(df)
                 print(df.tail(60))
 
                 return df
@@ -184,6 +185,7 @@ def form_name_dict():
         df = pd.DataFrame(columns=["name", "tag", "origin"])
         df = add_names(df, name_div, name_fin, nation_abrev, nations, probable_formats)
         form_files(df)
+        df = form_non_latin(df)
         print(df.tail(60))
 
         return df
