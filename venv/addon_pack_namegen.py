@@ -223,24 +223,30 @@ def add_names(df, name_div, name_fin, nation_abrev, nations, probable_formats):
         elif str(file) == "<Response [200]>":
             soup = BeautifulSoup(file.content, "html.parser")
             rec_data = soup.find_all(probable_formats[i])
+            item_txt = ""
             for item in rec_data:
-                print(type(item))
-                print(type(item.string))
-                if item.string is None:
-                    print("Woopsy")
+                item_txt = item.string
+                try:
+                    print("Children are", item.children())
+                except:
+                    pass
+                if item_txt is None:
+                    print(item.text)
+                    item_split = item.text.split(" ")
+                    item_txt = item_split[0]
                 #   temp_item = item.findChildren()
                 #  print(temp_item.string)
                 print(item.string)
-                if item.string == name_div[i - 1]:  # First female entry
+                if item_txt == name_div[i - 1]:  # First female entry
                     divide = True
-                if item.string == name_fin[i]:  # Last acceptable entry
-                    adder = str(item.string)
+                if item_txt == name_fin[i]:  # Last acceptable entry
+                    adder = str(item_txt)
                     df = df.append({"name": adder, "tag": "F", "origin": "{}".format(nation_abrev[i])},
                                    ignore_index=True)
                     break
 
-                if item.string is not None:
-                    adder = str(item.string)
+                if item_txt is not None:
+                    adder = str(item_txt)
                     parts = re.split(r'[;,\s]\s*', adder)  # removes any double names that are not hyphinated
                     print(parts)
                     adder = parts[0]
@@ -258,6 +264,7 @@ def add_names(df, name_div, name_fin, nation_abrev, nations, probable_formats):
                         df = df.append({"name": adder, "tag": "F", "origin": "{}".format(nation_abrev[i])},
                                        ignore_index=True)
     df["name"] = df["name"].str.replace("[^\w\s]", "")
+    df["name"] = df["name"].str.replace("[\b\d+(?:\.\d+)?\s+]", "")
     df = df.dropna(axis=0, how='any', thresh=None, subset=None, inplace=False)
     df = df.drop_duplicates(subset="name", keep="first")
     return df
