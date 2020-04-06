@@ -1,5 +1,5 @@
 import pandas as pd; import numpy as np;
-import requests; import os; import re
+import requests; import os; import re; import json
 from bs4 import BeautifulSoup
 from transliterate import translit, detect_language
 
@@ -129,6 +129,12 @@ def italian_surnames():
     df["name"] = df["name"].str.replace("[^\w\s]", "")
     print(df.tail(60))
     return df
+def get_json_data():
+    #This function aims to use JSON requests to expand the dataframe, checking if the already generated dataframe,
+    #In the form dict function actually has all the available names from the source
+    url = "http://en.wiktionary.org/w/api.php?action=query&titles=fourty"
+    r = requests.get(url).json()
+    print(r)
 
 
 
@@ -171,21 +177,22 @@ def form_name_dict():
 
                 df = pd.DataFrame(columns=["name", "tag", "origin"])
                 df = add_names(df, name_div, name_fin, nation_abrev, nations, probable_formats)
-                form_files(df)
                 df = form_non_latin(df)
+                form_files(df)
                 print(df.tail(60))
 
                 return df
             else:
                 return df_stable
         except:
+            print("An error occured")
             pass
     else:
         print("File does not exist, starting up Beautiful Soup and creating files")
         df = pd.DataFrame(columns=["name", "tag", "origin"])
         df = add_names(df, name_div, name_fin, nation_abrev, nations, probable_formats)
-        form_files(df)
         df = form_non_latin(df)
+        form_files(df)
         print(df.tail(60))
 
         return df
@@ -315,5 +322,6 @@ def form_npc_csv():
     #DF outputs duplicated even though duplicates are dropped above, needs to be fixed
 
 
-df = form_name_dict()
-print(df)
+#df = form_name_dict()
+#print(df)
+get_json_data()
