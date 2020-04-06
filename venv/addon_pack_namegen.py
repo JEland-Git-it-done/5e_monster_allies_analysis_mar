@@ -156,8 +156,10 @@ def form_name_dict():
             #form_non_latin(file_list)
             print("Test result: ", test_case)
             print(test_case)
+            df_csv = clean_df(df_csv)
             test_case = start_soup(test_case)
             df_stable = form_non_latin(df_csv)
+
 
             #If you decide you need to add new names, please ensure you have added the following things
             #1. The nations name, relative to the wikipedia article, for instance https://en.wiktionary.org/wiki/Appendix:Russian_given_names
@@ -263,6 +265,11 @@ def add_names(df, name_div, name_fin, nation_abrev, nations, probable_formats):
                     else:
                         df = df.append({"name": adder, "tag": "F", "origin": "{}".format(nation_abrev[i])},
                                        ignore_index=True)
+    df = clean_df(df)
+    return df
+
+
+def clean_df(df):
     df["name"] = df["name"].str.replace("[^\w\s]", "")
     df["name"] = df["name"].str.replace("[\b\d+(?:\.\d+)?\s+]", "")
     df = df.dropna(axis=0, how='any', thresh=None, subset=None, inplace=False)
