@@ -129,12 +129,7 @@ def italian_surnames():
     df["name"] = df["name"].str.replace("[^\w\s]", "")
     print(df.tail(60))
     return df
-def get_json_data():
-    #This function aims to use JSON requests to expand the dataframe, checking if the already generated dataframe,
-    #In the form dict function actually has all the available names from the source
-    url = "http://en.wiktionary.org/w/api.php?action=query&titles=fourty"
-    r = requests.get(url).json()
-    print(r)
+
 
 
 
@@ -143,14 +138,14 @@ def form_name_dict():
     test_decision = True
     name_dict = {}
     nations = ["French", "Italian", "Spanish", "Turkish", "Dutch", "Swedish", "Polish", "Serbian", "Irish",
-                       "Czech", "Hungarian", "Russian"] #Test cases to see if wiktionary will take these as a real argument
+                       "Czech", "Hungarian", "Russian", "Persian"] #Test cases to see if wiktionary will take these as a real argument
     nation_abrev = ["FRA", "ITA", "SPA", "TUR", "DUT", "SWE", "POL", "SRB", "IRE",
-                            "CZE", "HUN", "RUS"]
-    probable_formats = ["dd", "dd", "dd", "dd", "li", "dd", "td", "li", "li", "dd", "dd", "td"]
+                            "CZE", "HUN", "RUS", "IRA"]
+    probable_formats = ["dd", "dd", "dd", "dd", "li", "dd", "td", "li", "li", "dd", "dd", "td", "li"]
     name_div = ["Abbée", "Abbondanza" "Abdianabel", "Abay", "Aafke", "Aagot",  "Adela", "Anica",
-                        "Aengus", "Ada", "Adél", "Авдотья"]
+                        "Aengus", "Ada", "Adél", "Авдотья", "Aban"]
     name_fin = ["Zoëlle", "Zelmira", "Zulema", "Zekiye", "Zjarritjen", "Öllegård", "Żywia",
-                        "Vida", "Nóra", "Zorka", "Zseraldin", "Ярослава"]
+                        "Vida", "Nóra", "Zorka", "Zseraldin", "Ярослава", "Yasmin"]
     if os.path.exists("npcs.csv") or os.path.exists("npcs.xlsx"):
         print("File already exists")
         try:
@@ -204,11 +199,11 @@ def start_soup(add_decision):
         print("Do you need to add new names? [y/n?]")
 
         answer = input("\n\n\n")
-        if answer.lower() == "y":
+        if answer.lower() == "y" or answer.lower() == "yes":
             print("Adding new files")
             add_decision = False
             input_finish = True
-        elif answer.lower() == "n":
+        elif answer.lower() == "n" or answer.lower() == "no":
             print("Returing Dataframe")
             add_decision = True
             input_finish = True
@@ -229,6 +224,12 @@ def add_names(df, name_div, name_fin, nation_abrev, nations, probable_formats):
             soup = BeautifulSoup(file.content, "html.parser")
             rec_data = soup.find_all(probable_formats[i])
             for item in rec_data:
+                print(type(item))
+                print(type(item.string))
+                if item.string is None:
+                    print("Woopsy")
+                #   temp_item = item.findChildren()
+                #  print(temp_item.string)
                 print(item.string)
                 if item.string == name_div[i - 1]:  # First female entry
                     divide = True
@@ -237,9 +238,11 @@ def add_names(df, name_div, name_fin, nation_abrev, nations, probable_formats):
                     df = df.append({"name": adder, "tag": "F", "origin": "{}".format(nation_abrev[i])},
                                    ignore_index=True)
                     break
+
                 if item.string is not None:
                     adder = str(item.string)
                     parts = re.split(r'[;,\s]\s*', adder)  # removes any double names that are not hyphinated
+                    print(parts)
                     adder = parts[0]
                     if not adder.strip():
                         print("Not Found")
@@ -322,6 +325,5 @@ def form_npc_csv():
     #DF outputs duplicated even though duplicates are dropped above, needs to be fixed
 
 
-#df = form_name_dict()
-#print(df)
-get_json_data()
+df = form_name_dict()
+print(df)
