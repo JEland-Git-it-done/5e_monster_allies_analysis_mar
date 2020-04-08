@@ -318,7 +318,10 @@ def form_non_latin(df):
     print(df)
     return df
 
-
+def generate_city_input():
+    #Function will use DCGAN with geonames to create plausible settlement / city names along side NPC generator
+    #https://www.geonames.org/
+    print("This function has not been implemented yet")
 
 def form_files(data):
     #Aims to create a CSV, Excell and SQL version of the dataframe
