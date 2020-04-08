@@ -55,22 +55,33 @@ def assign_class():
     #This function aims to read through all of the articles and tries to find keywords, these will be used to assign monsters a class in the spreadsheet
     df = read_blogs()
     class_type = ["artillery", "brute", "controller", "summoner", "assassin",
-                  "lurker", "minion", "skirmisher", "guard", "leader", "mindless",
+                  "lurker", "is aminion", "skirmisher", "leader", "mindless",
                   "solo"]
+
     changable_df = pd.read_csv("cleaned_kfc_monstercopy.csv")
+    target_names = pd.unique(changable_df["name"])
+    print(target_names)
     for index, row in df.iterrows():
         print("The article is called {}".format(row["article_id"]))
         text = row["text"]
-        assigner_keywords = keywords(text, ratio=0.09)
-        print(assigner_keywords)
+
+        #assigner_keywords = keywords(text, ratio=0.09)
+        #print(assigner_keywords)
         nlp = spacy.load('en_core_web_sm')
         doc_nlp = nlp(text)
         sent_list = [sent for sent in doc_nlp.sents]
         for sent in sent_list:
             sent_lower = str(sent)
+            sent_lower = sent_lower.lower()
             for i in range(len(class_type)):
-                if class_type[i] in sent_lower.lower():
+                if class_type[i] in sent_lower:
                     print(sent, row["article_id"])
+                    for y in range(len(target_names)):
+                        if target_names[y] in sent_lower:
+                            print(target_names[y])
+                            print(class_type[i])
+                            print("The object {0} will be added to the dataframe\nGiving it the {1} role".format(target_names[y], class_type[i]))
+
 
 
 def read_blogs():
