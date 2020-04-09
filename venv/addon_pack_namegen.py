@@ -137,21 +137,38 @@ def splice_international_names(): #add npc_df as argument
     print("Splicing previous dataframe with international dataframe")
     df_target = pd.read_csv("firstnames_matthiaswinkelmann.csv")
     col = df_target.columns #Columns are made up of 2 strings that are ineffecient
+    new_cols = refactor_columns(col)
+    print(new_cols)
+    a, b = df_target.columns[0], df_target.columns[1]
+
+    df_target = df_target.rename(columns={a:"index", b:"extra"})
+    df_target = df_target.replace("", "0")
+
+    print(df_target)
+    values = df_target.values
+
+
+    print(values[0])
+
+    print(df_target.shape)
+    #df_target[nations] = df_target[nations].replace("[^\w\s]", "")
+    print(df_target)
+    #for index, row in df_target.iterrows():
+        #df_target["origin"] = np.where(df_target)
+
+
+
+def refactor_columns(col):
     new_columns = []
     for i in range(len(col)):
         line = col[i]
         out = line.split(";")
         new_columns = new_columns + out
+    nations = new_columns
+    nations.pop(-1)
+    nations.remove("etc.")
+    return nations
 
-    print(new_columns)
-    nations = new_columns[2:]
-    print(nations[0])
-    print(nations)
-    df_target[nations] = df_target[nations].replace("[^\w\s]", "")
-    print(df_target)
-    for index, row in df_target.iterrows():
-        df_target["origin"] = np.where(df_target)
-    df_target["origin"] = df_target
 
 def form_latin_name_dict():
     test_case = False
