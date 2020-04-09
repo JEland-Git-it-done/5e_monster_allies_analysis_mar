@@ -23,20 +23,7 @@ Wikientries are now being used to form "organic" lists, the problem with these e
 one another, meaning that there is no standardised function that i can create to pass each link through
 '''
 
-npc_df = None
 
-def npc_scandi_male():
-    df = pd.read_excel("boys_NW_NPC.xlsx")
-    df = df.rename(columns={"Historical top boys' names. 1880-2019" : "year"})
-    for i in range(10):
-        df = df.rename(columns={"Historical top boys' names. 1880-2019.{}".format(str(i + 1)) : str(i + 1)})
-    df = df.dropna(axis="index")
-    for x in range(len(df.columns) - 1):
-        x += 1
-        df["{}".format(str(x))] = [y.replace("\*","") for y in df["{}".format(str(x))]]
-
-    print(df.columns)
-    print(df)
 
 def german_names(): #This function is a test case of reading a wikipedia list to source names, with the names being loaded in DL elements (descriptive lists)
     #letters = list(string.ascii_uppercase)#
@@ -130,31 +117,47 @@ def italian_surnames():
     print(df.tail(60))
     return df
 
-def splice_international_names(): #add npc_df as argument
+def clean_international_names(): #add npc_df as argument
     #Due to a distinct lack of international names, outside of europe from the previous sources
     #This function will use the first name database provided by Matthias Winkelmann and Jörg MICHAEL at the following adress
     #https://github.com/MatthiasWinkelmann/firstname-database
     print("Splicing previous dataframe with international dataframe")
     df_target = pd.read_csv("firstnames_matthiaswinkelmann.csv")
+    print(df_target)
     col = df_target.columns #Columns are made up of 2 strings that are ineffecient
     new_cols = refactor_columns(col)
     print(new_cols)
+
     a, b = df_target.columns[0], df_target.columns[1]
 
-    df_target = df_target.rename(columns={a:"index", b:"extra"})
-    df_target = df_target.replace("", "0")
+    df_target = df_target.rename(columns={a:"text", b:"na"})
+    df_target["text"] = df_target["text"].str.replace(";;", ",0,")
+    df_target["text"] = df_target["text"].str.replace(";", ",")
+    df_target["text"] = df_target["text"].str.replace(",,", ",")
+    df_target= df_target.drop(columns=["na"])
+    #print(type(df_target))
+    name, gender = [], []
+    new_df = pd.DataFrame(columns=["name", "tag", "origin"])
+    for i, r in df_target.iterrows():
 
-    print(df_target)
-    values = df_target.values
-
-
-    print(values[0])
-
-    print(df_target.shape)
-    #df_target[nations] = df_target[nations].replace("[^\w\s]", "")
-    print(df_target)
-    #for index, row in df_target.iterrows():
-        #df_target["origin"] = np.where(df_target)
+        origins = []
+        #Splits the text value into seperate parts
+        text_list = r["text"].split(",")
+        text_list[-1] = "0"
+        for g in text_list[2:]:
+            if g != "0":
+                #print(text_list.index(g))
+                pos = text_list.index(g)
+                #print(type(new_cols[pos]))
+                #print(new_cols[pos])
+                origins.append(new_cols[pos])
+        #print(r)
+        name.append(text_list[0])
+        gender.append(text_list[1])
+        new_df = new_df.append({"name": text_list[0],"tag":text_list[1], "origin": origins}, ignore_index=True)
+    bar.finish()
+    print(new_df)
+    print(pd.unique(new_df["tag"]))
 
 
 
@@ -376,5 +379,6 @@ def form_npc_csv():
 
 
 #df = form_latin_name_dict()
-df = splice_international_names()
+df = clean_international_names()
+
 print(df)
