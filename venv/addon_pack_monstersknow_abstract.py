@@ -55,8 +55,8 @@ def assign_class():
     #This function aims to read through all of the articles and tries to find keywords, these will be used to assign monsters a class in the spreadsheet
     df = read_blogs()
     class_type = ["artillery", "brute", "controller", "summoner", "assassin",
-                  "lurker", "is aminion", "skirmisher", "leader", "mindless",
-                  "solo"]
+                  "lurker", "is a minion", "skirmisher", "leader", "mindless",
+                  "solo", "a spellcaster"]
 
     changable_df = pd.read_csv("cleaned_kfc_monstercopy.csv")
     target_names = pd.unique(changable_df["name"])
@@ -78,6 +78,7 @@ def assign_class():
                     print(sent, row["article_id"])
                     for y in range(len(target_names)):
                         if target_names[y] in sent_lower:
+                            #Impelement alternate version that uses my own input to create roles for each monster, using data returned from this function
                             print(target_names[y])
                             print(class_type[i])
                             print("The object {0} will be added to the dataframe\nGiving it the {1} role".format(target_names[y], class_type[i]))
