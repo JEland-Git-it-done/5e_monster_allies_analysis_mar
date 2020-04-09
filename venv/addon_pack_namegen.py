@@ -1,7 +1,7 @@
 import pandas as pd; import numpy as np;
 import requests; import os; import re; import json
 from bs4 import BeautifulSoup
-from transliterate import translit, detect_language
+from transliterate import translit, detect_language; from time import time
 
 
 
@@ -121,6 +121,7 @@ def clean_international_names(): #add npc_df as argument
     #Due to a distinct lack of international names, outside of europe from the previous sources
     #This function will use the first name database provided by Matthias Winkelmann and Jörg MICHAEL at the following adress
     #https://github.com/MatthiasWinkelmann/firstname-database
+    start = time.time()
     print("Splicing previous dataframe with international dataframe")
     df_target = pd.read_csv("firstnames_matthiaswinkelmann.csv")
     print(df_target)
@@ -155,7 +156,8 @@ def clean_international_names(): #add npc_df as argument
         name.append(text_list[0])
         gender.append(text_list[1])
         new_df = new_df.append({"name": text_list[0],"tag":text_list[1], "origin": origins}, ignore_index=True)
-    bar.finish()
+    end = time.time()
+    print("Time elapsed: ", start - end)
     print(new_df)
     print(pd.unique(new_df["tag"]))
 
