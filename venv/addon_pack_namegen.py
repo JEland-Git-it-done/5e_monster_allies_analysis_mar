@@ -130,10 +130,30 @@ def italian_surnames():
     print(df.tail(60))
     return df
 
+def splice_international_names(): #add npc_df as argument
+    #Due to a distinct lack of international names, outside of europe from the previous sources
+    #This function will use the first name database provided by Matthias Winkelmann and Jörg MICHAEL at the following adress
+    #https://github.com/MatthiasWinkelmann/firstname-database
+    print("Splicing previous dataframe with international dataframe")
+    df_target = pd.read_csv("firstnames_matthiaswinkelmann.csv")
+    col = df_target.columns #Columns are made up of 2 strings that are ineffecient
+    new_columns = []
+    for i in range(len(col)):
+        line = col[i]
+        out = line.split(";")
+        new_columns = new_columns + out
 
+    print(new_columns)
+    nations = new_columns[2:]
+    print(nations[0])
+    print(nations)
+    df_target[nations] = df_target[nations].replace("[^\w\s]", "")
+    print(df_target)
+    for index, row in df_target.iterrows():
+        df_target["origin"] = np.where(df_target)
+    df_target["origin"] = df_target
 
-
-def form_name_dict():
+def form_latin_name_dict():
     test_case = False
     test_decision = True
     name_dict = {}
@@ -158,7 +178,7 @@ def form_name_dict():
             print(test_case)
             df_csv = clean_df(df_csv)
             test_case = start_soup(test_case)
-            df_stable = form_non_latin(df_csv)
+            df_stable = translit_non_latin(df_csv)
 
 
             #If you decide you need to add new names, please ensure you have added the following things
@@ -174,7 +194,7 @@ def form_name_dict():
 
                 df = pd.DataFrame(columns=["name", "tag", "origin"])
                 df = add_names(df, name_div, name_fin, nation_abrev, nations, probable_formats)
-                df = form_non_latin(df)
+                df = translit_non_latin(df)
                 form_files(df)
                 print(df.tail(60))
 
@@ -188,7 +208,7 @@ def form_name_dict():
         print("File does not exist, starting up Beautiful Soup and creating files")
         df = pd.DataFrame(columns=["name", "tag", "origin"])
         df = add_names(df, name_div, name_fin, nation_abrev, nations, probable_formats)
-        df = form_non_latin(df)
+        df = translit_non_latin(df)
         form_files(df)
         print(df.tail(60))
 
@@ -228,10 +248,6 @@ def add_names(df, name_div, name_fin, nation_abrev, nations, probable_formats):
             item_txt = ""
             for item in rec_data:
                 item_txt = item.string
-                try:
-                    print("Children are", item.children())
-                except:
-                    pass
                 if item_txt is None:
                     print(item.text)
                     item_split = item.text.split(" ")
@@ -298,13 +314,13 @@ def start_tests(file_in, nation):
     else:
         return False
 
-def form_non_latin(df):
+def translit_non_latin(df):
     #This function will first add names that are in non latin cases, eg. russian names and
     #Will translate them along with any other names that already exist in the DF
     non_latin_languages = ["RUS", "SRB"]
     print("*\n*\n*\n*\n*\n")
     for column in df.columns:
-        df_copy = df.loc[(df["origin"] == "SRB") | (df["origin"] == "RUS")]
+        df_copy = df.loc[(df["origin"] == "SRB") | (df["origin"] == "RUS")] #Add any other languages that may use Cyrillic Script
         for index, row in df_copy.iterrows():
             name = row[0]
             language_code = detect_language(name)
@@ -342,5 +358,6 @@ def form_npc_csv():
     #DF outputs duplicated even though duplicates are dropped above, needs to be fixed
 
 
-df = form_name_dict()
+#df = form_latin_name_dict()
+df = splice_international_names()
 print(df)
