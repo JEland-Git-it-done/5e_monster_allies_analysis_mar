@@ -23,8 +23,6 @@ Wikientries are now being used to form "organic" lists, the problem with these e
 one another, meaning that there is no standardised function that i can create to pass each link through
 '''
 
-
-
 def german_names(): #This function is a test case of reading a wikipedia list to source names, with the names being loaded in DL elements (descriptive lists)
     #letters = list(string.ascii_uppercase)#
     if os.path.exists("npcs.csv"):
@@ -116,12 +114,20 @@ def italian_surnames():
     df["name"] = df["name"].str.replace("[^\w\s]", "")
     print(df.tail(60))
     return df
-
+def listify_string(row):
+    text_list = row.split(",")
+    text_list[-1] = "0"
+    print(text_list)
+    origins = [new_cols[text_list.index(g)] for g in text_list[2:] if g != "0"]
+    new_df = new_df.append({"name": text_list[0], "tag": text_list[1], "origin": origins}, ignore_index=True)
+    print(new_df)
+    return new_df
 def clean_international_names(): #add npc_df as argument
     #Due to a distinct lack of international names, outside of europe from the previous sources
     #This function will use the first name database provided by Matthias Winkelmann and Jörg MICHAEL at the following adress
     #https://github.com/MatthiasWinkelmann/firstname-database
     start = time.time()
+
     print("Splicing previous dataframe with international dataframe")
     df_target = pd.read_csv("firstnames_matthiaswinkelmann.csv")
     print(df_target)
@@ -130,7 +136,6 @@ def clean_international_names(): #add npc_df as argument
     print(new_cols)
 
     a, b = df_target.columns[0], df_target.columns[1]
-
     df_target = df_target.rename(columns={a:"text", b:"na"})
     df_target["text"] = df_target["text"].str.replace(";;", ",0,")
     df_target["text"] = df_target["text"].str.replace(";", ",")
@@ -138,8 +143,9 @@ def clean_international_names(): #add npc_df as argument
     df_target= df_target.drop(columns=["na"])
     #print(type(df_target))
     new_df = pd.DataFrame(columns=["name", "tag", "origin"])
+    #new_df = df_target["text"].apply(listify_string)
+    #need to put in argument for new_columns checker, could assign numbers and change after
     for i, r in df_target.iterrows():
-
         #Splits the text value into seperate parts
         text_list = r["text"].split(",")
         text_list[-1] = "0"
