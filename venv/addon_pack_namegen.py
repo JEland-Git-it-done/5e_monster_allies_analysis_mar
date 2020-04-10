@@ -1,7 +1,7 @@
 import pandas as pd; import numpy as np;
 import requests; import os; import re; import json
 from bs4 import BeautifulSoup
-from transliterate import translit, detect_language; from time import time
+from transliterate import translit, detect_language; import time
 
 
 
@@ -137,29 +137,23 @@ def clean_international_names(): #add npc_df as argument
     df_target["text"] = df_target["text"].str.replace(",,", ",")
     df_target= df_target.drop(columns=["na"])
     #print(type(df_target))
-    name, gender = [], []
     new_df = pd.DataFrame(columns=["name", "tag", "origin"])
     for i, r in df_target.iterrows():
 
-        origins = []
         #Splits the text value into seperate parts
         text_list = r["text"].split(",")
         text_list[-1] = "0"
-        for g in text_list[2:]:
-            if g != "0":
-                #print(text_list.index(g))
-                pos = text_list.index(g)
-                #print(type(new_cols[pos]))
-                #print(new_cols[pos])
-                origins.append(new_cols[pos])
-        #print(r)
-        name.append(text_list[0])
-        gender.append(text_list[1])
+        #found = map(text_list[2:])
+        origins = [new_cols[text_list.index(g)] for g in text_list[2:] if g != "0"]
+
         new_df = new_df.append({"name": text_list[0],"tag":text_list[1], "origin": origins}, ignore_index=True)
+
     end = time.time()
     print("Time elapsed: ", start - end)
-    print(new_df)
+
     print(pd.unique(new_df["tag"]))
+
+    return new_df
 
 
 
