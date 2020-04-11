@@ -115,27 +115,12 @@ def italian_surnames():
     print(df.tail(60))
     return df
 
-def listify_string(row):
-    df_target = pd.read_csv("firstnames_matthiaswinkelmann.csv")
-    print(df_target)
-    col = df_target.columns #Columns are made up of 2 strings that are ineffecient
-    new_cols = refactor_columns(col)
-    text_list = row.split(",")
-    text_list[-1] = "0"
 
-    print(text_list)
-    origins = [text_list[0], text_list[1]]
-    origins = [new_cols[text_list.index(g)] for g in text_list[2:] if g != "0"]
-
-    new_df.append({"name": text_list[0], "tag": text_list[1], "origin": origins}, ignore_index=True)
-
-    print(new_df)
-    return new_df
 def clean_international_names(): #add npc_df as argument
     #Due to a distinct lack of international names, outside of europe from the previous sources
     #This function will use the first name database provided by Matthias Winkelmann and Jörg MICHAEL at the following adress
     #https://github.com/MatthiasWinkelmann/firstname-database
-    start = time.time()
+
 
     print("Splicing previous dataframe with international dataframe")
     df_target = pd.read_csv("firstnames_matthiaswinkelmann.csv")
@@ -153,19 +138,19 @@ def clean_international_names(): #add npc_df as argument
     #print(type(df_target))
     new_df = pd.DataFrame(columns=["name", "tag", "origin"])
 
-    new_df = df_target["text"].apply(listify_string)
     #need to put in argument for new_columns checker, could assign numbers and change after
-    for i, r in df_target.iterrows():
-        print("Testing ...")
-        #Splits the text value into seperate parts
-        text_list = r["text"].split(",")
-        text_list[-1] = "0"
-        #found = map(text_list[2:])
-        origins = [new_cols[text_list.index(g)] for g in text_list[2:] if g != "0"]
+    start = time.time()
+    for i in range(len(df_target)):
+        print("Testing second iterration")
 
-        new_df = new_df.append({"name": text_list[0],"tag":text_list[1], "origin": origins}, ignore_index=True)
+        text_arg = df_target.loc[i, "text"].split(",")
+        print(text_arg)
+        text_arg[-1] = "0"
+        origins = [new_cols[text_arg.index(b)] for b in text_arg[2:] if b != "0"]
+        new_df = new_df.append({"name": text_arg[0], "tag": text_arg[1], "origin": origins}, ignore_index=True)
 
     end = time.time()
+    print(new_df)
     print("Time elapsed: ", start - end)
 
     print(pd.unique(new_df["tag"]))
