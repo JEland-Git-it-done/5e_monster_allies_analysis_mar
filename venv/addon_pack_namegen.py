@@ -114,12 +114,21 @@ def italian_surnames():
     df["name"] = df["name"].str.replace("[^\w\s]", "")
     print(df.tail(60))
     return df
+
 def listify_string(row):
+    df_target = pd.read_csv("firstnames_matthiaswinkelmann.csv")
+    print(df_target)
+    col = df_target.columns #Columns are made up of 2 strings that are ineffecient
+    new_cols = refactor_columns(col)
     text_list = row.split(",")
     text_list[-1] = "0"
+
     print(text_list)
+    origins = [text_list[0], text_list[1]]
     origins = [new_cols[text_list.index(g)] for g in text_list[2:] if g != "0"]
-    new_df = new_df.append({"name": text_list[0], "tag": text_list[1], "origin": origins}, ignore_index=True)
+
+    new_df.append({"name": text_list[0], "tag": text_list[1], "origin": origins}, ignore_index=True)
+
     print(new_df)
     return new_df
 def clean_international_names(): #add npc_df as argument
@@ -143,9 +152,11 @@ def clean_international_names(): #add npc_df as argument
     df_target= df_target.drop(columns=["na"])
     #print(type(df_target))
     new_df = pd.DataFrame(columns=["name", "tag", "origin"])
-    #new_df = df_target["text"].apply(listify_string)
+
+    new_df = df_target["text"].apply(listify_string)
     #need to put in argument for new_columns checker, could assign numbers and change after
     for i, r in df_target.iterrows():
+        print("Testing ...")
         #Splits the text value into seperate parts
         text_list = r["text"].split(",")
         text_list[-1] = "0"
