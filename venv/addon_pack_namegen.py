@@ -69,10 +69,12 @@ def clean_international_names(): #add npc_df as argument
             print("Testing second iterration")
 
             text_arg = df_target.loc[i, "text"].split(",")
-            print(text_arg)
+
             text_arg[-1] = "0"
             origins = [new_cols[text_arg.index(b)] for b in text_arg[2:] if b != "0"]
-            origins = set(origins) #This should eliminate any duplicate values inside of the list
+            origins = list(dict.fromkeys(origins)) #This should eliminate any duplicate values inside of the list
+            print(text_arg, origins, "\n", new_cols)
+            print("Testing aspects:", len(text_arg), len(new_cols))
             new_df = new_df.append({"name": text_arg[0], "tag": text_arg[1], "origin": origins}, ignore_index=True)
 
         end = time.time()
@@ -91,14 +93,14 @@ def check_if_exists():
         sample = test_df.sample(20)
         print(sample)
         print(test_df.index[50:80])
-        
+
     return outcome
 
 
 def format_df_target(df_target):
     a, b = df_target.columns[0], df_target.columns[1]
     df_target = df_target.rename(columns={a: "text", b: "na"})
-    df_target["text"] = df_target["text"].str.replace(";;", ",0,")
+    df_target["text"] = df_target["text"].str.replace(";;", ",0,0") #Crude fix, bad data to blame
     df_target["text"] = df_target["text"].str.replace(";", ",")
     df_target["text"] = df_target["text"].str.replace(",,", ",")
     df_target = df_target.drop(columns=["na"])
@@ -112,7 +114,8 @@ def refactor_columns(col):
         out = line.split(";")
         new_columns = new_columns + out
     nations = new_columns
-    nations.pop(-1), nations.remove("etc.")
+    nations.pop(-1)
+    nations.remove("etc.")
     return nations
 
 
