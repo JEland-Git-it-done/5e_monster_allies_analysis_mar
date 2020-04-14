@@ -67,12 +67,17 @@ def clean_international_names(): #add npc_df as argument
         start = time.time()
         for i in range(len(df_target)):
             print("Testing second iterration")
-
+            origins = []
             text_arg = df_target.loc[i, "text"].split(",")
-
             text_arg[-1] = "0"
-            origins = [new_cols[text_arg.index(b)] for b in text_arg[2:] if b != "0"]
-            origins = list(dict.fromkeys(origins)) #This should eliminate any duplicate values inside of the list
+            text_temp = text_arg[2:]
+            for p in range(len(text_temp)):
+                if text_temp[p] != "0":
+                    origins.append(new_cols[p+2]) #The +2 Counteracts the slice action
+                    print(p)
+
+            #Although inline text version is quicker, there are issues with duplicate values origins = [new_cols[text_arg.index(b)] for b in text_arg[2:] if b != "0"]
+            #This should eliminate any duplicate values inside of the list
             print(text_arg, origins, "\n", new_cols)
             print("Testing aspects:", len(text_arg), len(new_cols))
             new_df = new_df.append({"name": text_arg[0], "tag": text_arg[1], "origin": origins}, ignore_index=True)
