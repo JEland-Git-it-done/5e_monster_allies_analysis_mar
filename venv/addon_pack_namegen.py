@@ -52,6 +52,8 @@ def clean_international_names(): #add npc_df as argument
     exists = check_if_exists()
     if exists:
         print("This file already exists in the a already created CSV folder, this function will use this version instead of creating a new file")
+        df = pd.read_excel("firstnames_cleaned.xlsx")
+        return df
     elif not exists:
         print("Splicing previous dataframe with international dataframe")
         df_target = pd.read_csv("firstnames_matthiaswinkelmann.csv")
@@ -84,6 +86,7 @@ def clean_international_names(): #add npc_df as argument
 
         end = time.time()
         print(new_df)
+        new_df["name"] = new_df["name"].str.replace("+","-")
         print("Time elapsed: ", start - end)
 
         print(pd.unique(new_df["tag"]))
@@ -97,7 +100,12 @@ def check_if_exists():
         test_df = pd.read_excel("firstnames_cleaned.xlsx")
         sample = test_df.sample(20)
         print(sample)
-        print(test_df.index[50:80])
+        print(test_df[50:80])
+        case1, case2, case3 = test_df.iloc[60], test_df.iloc[70], test_df.iloc[80]
+        print(case1["name"], case2["name"], case3["name"])
+        if case1["name"] == "Abay" and case2["name"] == "Abbondanzio" and case3["name"] == "Abdel-Fattah":
+            print("The cleaned file is valid")
+            outcome = True
 
     return outcome
 
