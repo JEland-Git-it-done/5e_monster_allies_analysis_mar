@@ -23,82 +23,7 @@ Wikientries are now being used to form "organic" lists, the problem with these e
 one another, meaning that there is no standardised function that i can create to pass each link through
 '''
 
-def german_names(): #This function is a test case of reading a wikipedia list to source names, with the names being loaded in DL elements (descriptive lists)
-    #letters = list(string.ascii_uppercase)#
-    if os.path.exists("npcs.csv"):
-        df = pd.read_csv("npcs.csv")
-        df = df[df["origin"] == "GER"]
-        print(df)
-        return df
-    else:
-
-        df = pd.DataFrame(columns=["name","tag", "origin"])
-
-        file = requests.get("https://en.wiktionary.org/wiki/Appendix:German_given_names")
-        soup = BeautifulSoup(file.content, "html.parser")
-        rec_data = soup.find_all("dd")
-        name_divided = False
-        for item in rec_data:
-            if item.string == "Aaltje":
-                name_divided = True
-            if item.string is not None:
-                adder = str(item.string)
-                if not name_divided:
-                    df = df.append({"name":adder, "tag":"M", "origin":"GER"}, ignore_index=True)
-                elif name_divided:
-                    df = df.append({"name":adder, "tag":"F", "origin":"GER"}, ignore_index=True)
-                    pass
-    df = german_surnames(df)
-
-    df_no_non = df.fillna(0)
-
-    print(df_no_non)
-    #df_no_non = df_no_non.drop_duplicates(subset="name", keep=False, inplace=True)
-    df_complete = df_no_non[df_no_non.values != 0]
-
-    print(df_complete)
-    return df_complete
-
-def german_surnames(dataframe):
-    file = requests.get("https://en.wiktionary.org/wiki/Appendix:German_surnames")
-    soup = BeautifulSoup(file.content, "html.parser")
-    rec_data = soup.find_all("li")
-    for item in rec_data:
-        if item.string == "German family name etymology":#This is the final part of the page, is used to exit loop
-            break
-        if item.string is not None:
-            adder = str(item.string)
-            if "(disambiguation)" in adder:
-                adder.replace("(disambiguation)", "")
-            print(adder)
-            dataframe = dataframe.append({"name": adder, "tag":"S", "origin":"GER"}, ignore_index=True) #S tag is indicative of the surname
-    dataframe["name"] = dataframe["name"].str.replace("[^\w\s]", "")
-    print(dataframe.tail(10))
-    return dataframe
-
-def italian_names():
-    file = requests.get("https://en.wiktionary.org/wiki/Appendix:Italian_given_names")
-    soup = BeautifulSoup(file.content, "html.parser")
-    rec_data = soup.find_all("dd")
-    name_div = False
-    df = pd.DataFrame(columns=["name", "tag", "origin"])
-    for item in rec_data:
-        if item.string == "Abbondanza":#First female entry
-            name_div = True
-        if item.string == "Zelmira":#Final part of page, exits loop
-            df = df.append({"name": adder, "tag": "F", "origin": "ITA"}, ignore_index=True)
-            break
-        if item.string is not None:
-            adder = str(item.string)
-            if not name_div:
-                df = df.append({"name": adder, "tag":"M", "origin":"ITA"}, ignore_index=True)
-            else:
-                df = df.append({"name": adder, "tag":"F", "origin": "ITA"}, ignore_index=True)
-    df["name"] = df["name"].str.replace("[^\w\s]", "")
-    print(df)
-    return df
-
-def italian_surnames():
+def italian_surnames(): #This function is a test case of reading a wikipedia list to source names, with the names being loaded in DL elements (descriptive lists)
     file = requests.get("https://en.wiktionary.org/wiki/Appendix:Italian_surnames")
     soup = BeautifulSoup(file.content, "html.parser")
     rec_data = soup.find_all("li")
@@ -124,18 +49,11 @@ def clean_international_names(): #add npc_df as argument
 
     print("Splicing previous dataframe with international dataframe")
     df_target = pd.read_csv("firstnames_matthiaswinkelmann.csv")
-    print(df_target)
+    print("This is the original CSV file, in a dataframe format \n", df_target)
     col = df_target.columns #Columns are made up of 2 strings that are ineffecient
     new_cols = refactor_columns(col)
-    print(new_cols)
 
-    a, b = df_target.columns[0], df_target.columns[1]
-    df_target = df_target.rename(columns={a:"text", b:"na"})
-    df_target["text"] = df_target["text"].str.replace(";;", ",0,")
-    df_target["text"] = df_target["text"].str.replace(";", ",")
-    df_target["text"] = df_target["text"].str.replace(",,", ",")
-    df_target= df_target.drop(columns=["na"])
-    #print(type(df_target))
+    df_target = format_df_target(df_target)
     new_df = pd.DataFrame(columns=["name", "tag", "origin"])
 
     #need to put in argument for new_columns checker, could assign numbers and change after
@@ -157,6 +75,15 @@ def clean_international_names(): #add npc_df as argument
 
     return new_df
 
+
+def format_df_target(df_target):
+    a, b = df_target.columns[0], df_target.columns[1]
+    df_target = df_target.rename(columns={a: "text", b: "na"})
+    df_target["text"] = df_target["text"].str.replace(";;", ",0,")
+    df_target["text"] = df_target["text"].str.replace(";", ",")
+    df_target["text"] = df_target["text"].str.replace(",,", ",")
+    df_target = df_target.drop(columns=["na"])
+    return df_target
 
 
 def refactor_columns(col):
