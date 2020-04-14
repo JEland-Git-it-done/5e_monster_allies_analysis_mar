@@ -39,41 +39,60 @@ def italian_surnames(): #This function is a test case of reading a wikipedia lis
     df["name"] = df["name"].str.replace("[^\w\s]", "")
     print(df.tail(60))
     return df
-
+def form_international_name_dict():
+    #Please note that most of the names involved in this function are infact latin-ised names, and cover countries that have already been found via web scraping
+    df = clean_international_names()
+    df_bs4 = form_latin_name_dict()
 
 def clean_international_names(): #add npc_df as argument
     #Due to a distinct lack of international names, outside of europe from the previous sources
     #This function will use the first name database provided by Matthias Winkelmann and Jörg MICHAEL at the following adress
     #https://github.com/MatthiasWinkelmann/firstname-database
 
+    exists = check_if_exists()
+    if exists:
+        print("This file already exists in the a already created CSV folder, this function will use this version instead of creating a new file")
+    elif not exists:
+        print("Splicing previous dataframe with international dataframe")
+        df_target = pd.read_csv("firstnames_matthiaswinkelmann.csv")
+        print("This is the original CSV file, in a dataframe format \n", df_target)
+        col = df_target.columns #Columns are made up of 2 strings that are ineffecient
+        new_cols = refactor_columns(col)
+        print("Creating new file")
 
-    print("Splicing previous dataframe with international dataframe")
-    df_target = pd.read_csv("firstnames_matthiaswinkelmann.csv")
-    print("This is the original CSV file, in a dataframe format \n", df_target)
-    col = df_target.columns #Columns are made up of 2 strings that are ineffecient
-    new_cols = refactor_columns(col)
+        df_target = format_df_target(df_target)
+        new_df = pd.DataFrame(columns=["name", "tag", "origin"])
 
-    df_target = format_df_target(df_target)
-    new_df = pd.DataFrame(columns=["name", "tag", "origin"])
+        #need to put in argument for new_columns checker, could assign numbers and change after
+        start = time.time()
+        for i in range(len(df_target)):
+            print("Testing second iterration")
 
-    #need to put in argument for new_columns checker, could assign numbers and change after
-    start = time.time()
-    for i in range(len(df_target)):
-        print("Testing second iterration")
+            text_arg = df_target.loc[i, "text"].split(",")
+            print(text_arg)
+            text_arg[-1] = "0"
+            origins = [new_cols[text_arg.index(b)] for b in text_arg[2:] if b != "0"]
+            origins = set(origins) #This should eliminate any duplicate values inside of the list
+            new_df = new_df.append({"name": text_arg[0], "tag": text_arg[1], "origin": origins}, ignore_index=True)
 
-        text_arg = df_target.loc[i, "text"].split(",")
-        print(text_arg)
-        text_arg[-1] = "0"
-        origins = [new_cols[text_arg.index(b)] for b in text_arg[2:] if b != "0"]
-        new_df = new_df.append({"name": text_arg[0], "tag": text_arg[1], "origin": origins}, ignore_index=True)
+        end = time.time()
+        print(new_df)
+        print("Time elapsed: ", start - end)
 
-    end = time.time()
-    print(new_df)
-    print("Time elapsed: ", start - end)
+        print(pd.unique(new_df["tag"]))
+        new_df.to_excel("firstnames_cleaned.xlsx", index=False)
 
-    print(pd.unique(new_df["tag"]))
+        return new_df
 
-    return new_df
+def check_if_exists():
+    outcome = False
+    if os.path.exists("firstnames_cleaned.xlsx"):
+        test_df = pd.read_excel("firstnames_cleaned.xlsx")
+        sample = test_df.sample(20)
+        print(sample)
+        print(test_df.index[50:80])
+        
+    return outcome
 
 
 def format_df_target(df_target):
@@ -93,8 +112,7 @@ def refactor_columns(col):
         out = line.split(";")
         new_columns = new_columns + out
     nations = new_columns
-    nations.pop(-1)
-    nations.remove("etc.")
+    nations.pop(-1), nations.remove("etc.")
     return nations
 
 
