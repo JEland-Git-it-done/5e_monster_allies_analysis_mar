@@ -87,6 +87,9 @@ def clean_international_names(): #add npc_df as argument
         end = time.time()
         print(new_df)
         new_df["name"] = new_df["name"].str.replace("+","-")
+        new_df["tag"] = new_df["tag"].str.replace("?F", "WF") #Weighted Female - most likely to be female
+        new_df["tag"] = new_df["tag"].str.replace("?M", "WM") #Weighted Male - most likely to be male
+        new_df["tag"] = new_df["tag"].str.replace("?", "NN") #name is neutral
         print("Time elapsed: ", start - end)
 
         print(pd.unique(new_df["tag"]))
@@ -100,10 +103,10 @@ def check_if_exists():
         test_df = pd.read_excel("firstnames_cleaned.xlsx")
         sample = test_df.sample(20)
         print(sample)
-        print(test_df[50:80])
-        case1, case2, case3 = test_df.iloc[60], test_df.iloc[70], test_df.iloc[80]
+        print(test_df[50:80], test_df[4000:4001])
+        case1, case2, case3, case4 = test_df.iloc[60], test_df.iloc[70], test_df.iloc[80], test_df.iloc[4000]
         print(case1["name"], case2["name"], case3["name"])
-        if case1["name"] == "Abay" and case2["name"] == "Abbondanzio" and case3["name"] == "Abdel-Fattah":
+        if case1["name"] == "Abay" and case2["name"] == "Abbondanzio" and case3["name"] == "Abdel-Fattah" and case4["name"] == "Bao-Lian":
             print("The cleaned file is valid")
             outcome = True
 
