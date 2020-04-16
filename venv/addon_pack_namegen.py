@@ -39,12 +39,22 @@ def italian_surnames(): #This function is a test case of reading a wikipedia lis
     df["name"] = df["name"].str.replace("[^\w\s]", "")
     print(df.tail(60))
     return df
-def form_international_name_dict():
-    #Please note that most of the names involved in this function are infact latin-ised names, and cover countries that have already been found via web scraping
-    df = clean_international_names()
-    df_bs4 = form_latin_name_dict()
+def read_surnames():
+    #https://en.wiktionary.org/wiki/Category:Surnames_by_language
+    #This function aims to go through each of the catagories listed in the above link, goes through each entry and tries to assign them to one of the pre existing lists
+    print("Attempting to webscrape surnames, along with some straggeler forenames")
 
-def clean_international_names(): #add npc_df as argument
+def splice_names():
+    #Please note that most of the names involved in this function are infact latin-ised names, and cover countries that have already been found via web scraping
+    df = form_international_names()
+    df_bs4 = form_latin_name_dict()
+    print(df_bs4.loc[df_bs4["origin"] == "IRA"])
+    frames = [df, df_bs4]
+    df_merge = pd.concat(frames)
+    print(df_merge)
+
+
+def form_international_names(): #add npc_df as argument
     #Due to a distinct lack of international names, outside of europe from the previous sources
     #This function will use the first name database provided by Matthias Winkelmann and Jörg MICHAEL at the following adress
     #https://github.com/MatthiasWinkelmann/firstname-database
@@ -53,7 +63,12 @@ def clean_international_names(): #add npc_df as argument
     if exists:
         print("This file already exists in the a already created CSV folder, this function will use this version instead of creating a new file")
         df = pd.read_excel("firstnames_cleaned.xlsx")
-        return df
+        new_df = df
+        new_df["tag"] = new_df["tag"].str.replace("1F", "WF").replace("?F", "WF") #Weighted Female - most likely to be female
+        new_df["tag"] = new_df["tag"].str.replace("1M", "?M").replace("?M", "WM") #Weighted Male - most likely to be male
+        new_df["tag"] = new_df["tag"].str.replace("?", "NN") #name is neutral, non last name
+        print(pd.unique(new_df["tag"]))
+        return new_df
     elif not exists:
         print("Splicing previous dataframe with international dataframe")
         df_target = pd.read_csv("firstnames_matthiaswinkelmann.csv")
@@ -67,6 +82,7 @@ def clean_international_names(): #add npc_df as argument
 
         #need to put in argument for new_columns checker, could assign numbers and change after
         start = time.time()
+
         for i in range(len(df_target)):
             print("Testing second iterration")
             origins = []
@@ -85,11 +101,12 @@ def clean_international_names(): #add npc_df as argument
             new_df = new_df.append({"name": text_arg[0], "tag": text_arg[1], "origin": origins}, ignore_index=True)
 
         end = time.time()
-        print(new_df)
+        print(new_df, pd.unique(new_df["tag"]))
         new_df["name"] = new_df["name"].str.replace("+","-")
-        new_df["tag"] = new_df["tag"].str.replace("?F", "WF") #Weighted Female - most likely to be female
-        new_df["tag"] = new_df["tag"].str.replace("?M", "WM") #Weighted Male - most likely to be male
-        new_df["tag"] = new_df["tag"].str.replace("?", "NN") #name is neutral
+        new_df["tag"] = new_df["tag"].str.replace("1F", "WF").replace("?F", "WF") #Weighted Female - most likely to be female
+        new_df["tag"] = new_df["tag"].str.replace("1M", "?M").replace("?M", "WM") #Weighted Male - most likely to be male
+        new_df["tag"] = new_df["tag"].str.replace("?", "NN") #name is neutral, non last name
+
         print("Time elapsed: ", start - end)
 
         print(pd.unique(new_df["tag"]))
@@ -140,14 +157,15 @@ def form_latin_name_dict():
     test_decision = True
     name_dict = {}
     nations = ["French", "Italian", "Spanish", "Turkish", "Dutch", "Swedish", "Polish", "Serbian", "Irish",
-                       "Czech", "Hungarian", "Russian", "Persian"] #Test cases to see if wiktionary will take these as a real argument
+                       "Czech", "Hungarian", "Russian", "Persian", "Basque", "Armenian"] #Test cases to see if wiktionary will take these as a real argument
     nation_abrev = ["FRA", "ITA", "SPA", "TUR", "DUT", "SWE", "POL", "SRB", "IRE",
-                            "CZE", "HUN", "RUS", "IRA"]
-    probable_formats = ["dd", "dd", "dd", "dd", "li", "dd", "td", "li", "li", "dd", "dd", "td", "li"]
+                            "CZE", "HUN", "RUS", "IRA", "BSQ", "ARM"]
+    probable_formats = ["dd", "dd", "dd", "dd", "li", "dd", "td", "li", "li", "dd", "dd", "td", "li", "dd",
+                        "li"]
     name_div = ["Abbée", "Abbondanza" "Abdianabel", "Abay", "Aafke", "Aagot",  "Adela", "Anica",
-                        "Aengus", "Ada", "Adél", "Авдотья", "Aban"]
+                        "Aengus", "Ada", "Adél", "Авдотья", "Aban", "Abarrane", "Akabi"]
     name_fin = ["Zoëlle", "Zelmira", "Zulema", "Zekiye", "Zjarritjen", "Öllegård", "Żywia",
-                        "Vida", "Nóra", "Zorka", "Zseraldin", "Ярослава", "Yasmin"]
+                        "Vida", "Nóra", "Zorka", "Zseraldin", "Ярослава", "Yasmin", "Zuriňe", "Zoulal"]
     if os.path.exists("npcs.csv") or os.path.exists("npcs.xlsx"):
         print("File already exists")
         try:
@@ -231,12 +249,14 @@ def add_names(df, name_div, name_fin, nation_abrev, nations, probable_formats):
             for item in rec_data:
                 item_txt = item.string
                 if item_txt is None:
-                    print(item.text)
+                    #print(item.text)
                     item_split = item.text.split(" ")
                     item_txt = item_split[0]
+                    item_txt = item_txt.strip()
                 #   temp_item = item.findChildren()
                 #  print(temp_item.string)
                 print(item.string)
+                print("Divided text: ", item_txt)
                 if item_txt == name_div[i - 1]:  # First female entry
                     divide = True
                 if item_txt == name_fin[i]:  # Last acceptable entry
@@ -289,6 +309,9 @@ def start_tests(file_in, nation):
             if df_temp.size > 99: #If the temp file is bigger than 10, assume the DF is correctly loaded
                 print("Size is adequate")
                 correct_responses.append(i) #adds to list
+            else:
+                print("Origin is missing names, would recommend adding files")
+                return False
 
     if len(correct_responses) == len(nation_abrev) * 2:
         print("Tests appear to be fine, can skip the BS4 implementation")
@@ -328,19 +351,10 @@ def form_files(data):
     #Continue Later
     #data.to_sql()
 
-def form_npc_csv():
-    #There is a strong argument to make this into an SQL file aswell, but for now CSV will do
-    available_df = {1:german_names(), 2:german_surnames(german_names())}
-    df_copy = german_names()
-    df_copy.drop_duplicates(["name"], keep="last")
 
-
-    print(df_copy)
-    df_copy.to_csv("npcs.csv", index=False)
-    #DF outputs duplicated even though duplicates are dropped above, needs to be fixed
 
 
 #df = form_latin_name_dict()
-df = clean_international_names()
+df = splice_names()
 
 print(df)
