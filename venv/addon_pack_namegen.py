@@ -54,7 +54,8 @@ def splice_names():
     #standardize_files(frames)
     df_merge = pd.concat(frames)
     print(df_merge)
-    print(pd.unique(df_merge["origin"]))
+    #mutable_list = pd.unique(df_merge["origin"])
+    #print(mutable_list)
     #Implements standardization between the two tables
     return df_merge
 
@@ -65,16 +66,19 @@ def form_international_names(): #add npc_df as argument
     #https://github.com/MatthiasWinkelmann/firstname-database
 
     exists = check_if_exists()
-    if exists:
+    add_files = False #Default value
+    decision = start_soup(add_files)
+    print(decision)
+
+    if exists and decision is False:
         print("This file already exists in the a already created CSV folder, this function will use this version instead of creating a new file")
         df = pd.read_excel("firstnames_cleaned.xlsx")
         new_df = df
-        new_df["tag"] = new_df["tag"].str.replace("1F", "WF").replace("?F", "WF") #Weighted Female - most likely to be female
-        new_df["tag"] = new_df["tag"].str.replace("1M", "?M").replace("?M", "WM") #Weighted Male - most likely to be male
-        new_df["tag"] = new_df["tag"].str.replace("?", "NN") #name is neutral, non last name
+        make_cross_compatible(new_df)
+
         print(pd.unique(new_df["tag"]))
         return new_df
-    elif not exists:
+    elif not exists or decision is True:
         print("Splicing previous dataframe with international dataframe")
         df_target = pd.read_csv("firstnames_matthiaswinkelmann.csv")
         print("This is the original CSV file, in a dataframe format \n", df_target)
@@ -108,10 +112,8 @@ def form_international_names(): #add npc_df as argument
 
         end = time.time()
         print(new_df, pd.unique(new_df["tag"]))
-        new_df["name"] = new_df["name"].str.replace("+","-")
-        new_df["tag"] = new_df["tag"].str.replace("1F", "WF").replace("?F", "WF") #Weighted Female - most likely to be female
-        new_df["tag"] = new_df["tag"].str.replace("1M", "?M").replace("?M", "WM") #Weighted Male - most likely to be male
-        new_df["tag"] = new_df["tag"].str.replace("?", "NN") #name is neutral, non last name
+        make_cross_compatible(new_df)
+
 
         print("Time elapsed: ", start - end)
 
@@ -119,6 +121,16 @@ def form_international_names(): #add npc_df as argument
         new_df.to_excel("firstnames_cleaned.xlsx", index=False)
 
         return new_df
+
+
+def make_cross_compatible(new_df):
+    new_df["name"] = new_df["name"].str.replace("+", "-")
+    new_df["tag"] = new_df["tag"].str.replace("1F", "WF").replace("?F",
+                                                                  "WF")  # Weighted Female - most likely to be female
+    new_df["tag"] = new_df["tag"].str.replace("1M", "?M").replace("?M", "WM")  # Weighted Male - most likely to be male
+    new_df["tag"] = new_df["tag"].str.replace("?", "NN")  # name is neutral, non last name
+
+
 
 def check_if_exists():
     outcome = False
@@ -154,7 +166,10 @@ def refactor_columns(col):
         out = line.split(";")
         new_columns = new_columns + out
     nations = new_columns
+
+    nations[4], nations[12], nations[26] = "USA", "Dutch", "Czech"
     nations.pop(-1)
+    print(nations)
     nations.remove("etc.")
     return nations
 
@@ -164,15 +179,15 @@ def form_latin_name_dict():
     test_decision = True
     name_dict = {}
     nations = ["French", "Italian", "Spanish", "Turkish", "Dutch", "Swedish", "Polish", "Serbian", "Irish",
-                       "Czech", "Hungarian", "Russian", "Persian", "Basque", "Armenian"] #Test cases to see if wiktionary will take these as a real argument
-    nation_abrev = ["FRA", "ITA", "SPA", "TUR", "DUT", "SWE", "POL", "SRB", "IRE",
-                            "CZE", "HUN", "RUS", "IRA", "BSQ", "ARM"]
+                       "Czech", "Hungarian", "Russian", "Persian", "Basque", "Armenian", "German"] #Test cases to see if wiktionary will take these as a real argument
+    nation_abrev = ["France", "Italy", "Spain", "Turkey", "Dutch", "Sweden", "Poland", "Serbia", "Ireland",
+                            "Czech", "Hungary", "Russia", "Arabia/Persia", "Basque", "Armenia", "German"]
     probable_formats = ["dd", "dd", "dd", "dd", "li", "dd", "td", "li", "li", "dd", "dd", "td", "li", "dd",
-                        "li"]
+                        "li", "dd"]
     name_div = ["Abbée", "Abbondanza" "Abdianabel", "Abay", "Aafke", "Aagot",  "Adela", "Anica",
-                        "Aengus", "Ada", "Adél", "Авдотья", "Aban", "Abarrane", "Akabi"]
+                        "Aengus", "Ada", "Adél", "Авдотья", "Aban", "Abarrane", "Akabi", "Aaltje"]
     name_fin = ["Zoëlle", "Zelmira", "Zulema", "Zekiye", "Zjarritjen", "Öllegård", "Żywia",
-                        "Vida", "Nóra", "Zorka", "Zseraldin", "Ярослава", "Yasmin", "Zuriňe", "Zoulal"]
+                "Vida", "Nóra", "Zorka", "Zseraldin", "Ярослава", "Yasmin", "Zuriňe", "Zoulal", "Zwaantje"]
     if os.path.exists("npcs.csv") or os.path.exists("npcs.xlsx"):
         print("File already exists")
         try:
@@ -182,7 +197,6 @@ def form_latin_name_dict():
 
             #form_non_latin(file_list)
             print("Test result: ", test_case)
-            print(test_case)
             df_csv = clean_df(df_csv)
             test_case = start_soup(test_case)
             df_stable = translit_non_latin(df_csv)
@@ -195,7 +209,7 @@ def form_latin_name_dict():
             #4. The first female name to change the gender type from male to female
             #5. The last name needed, as an end point (As wikipedia often adds extra things to the end of a file using
             #The HTML type that is being read by BS4)
-            if test_case == False:
+            if test_case == True:
                 #Move function here
                 print("Starting up Beautiful Soup")
 
@@ -225,16 +239,16 @@ def form_latin_name_dict():
 def start_soup(add_decision):
     input_finish = False
     while not input_finish:
-        print("Do you need to add new names? [y/n?]")
+        print("add new names: [y/n?]")
 
         answer = input("\n\n\n")
         if answer.lower() == "y" or answer.lower() == "yes":
             print("Adding new files")
-            add_decision = False
+            add_decision = True
             input_finish = True
         elif answer.lower() == "n" or answer.lower() == "no":
             print("Returing Dataframe")
-            add_decision = True
+            add_decision = False
             input_finish = True
         else:
             print("That is an invalid input, please type either Y or N")
@@ -253,9 +267,10 @@ def add_names(df, name_div, name_fin, nation_abrev, nations, probable_formats):
             soup = BeautifulSoup(file.content, "html.parser")
             rec_data = soup.find_all(probable_formats[i])
             item_txt = ""
-            origins = []
             for item in rec_data:
+                origins = []
                 item_txt = item.string
+                origins.append(nation_abrev[i])
                 if item_txt is None:
                     #print(item.text)
                     item_split = item.text.split(" ")
@@ -269,7 +284,7 @@ def add_names(df, name_div, name_fin, nation_abrev, nations, probable_formats):
                     divide = True
                 if item_txt == name_fin[i]:  # Last acceptable entry
                     adder = str(item_txt)
-                    origins = nation_abrev[i]
+
                     df = df.append({"name": adder, "tag": "F", "origin": origins},
                                    ignore_index=True)
                     break
@@ -287,10 +302,10 @@ def add_names(df, name_div, name_fin, nation_abrev, nations, probable_formats):
                         # Had to add this to fix the polish names set, should rework later
                         divide = True
                     if not divide:
-                        df = df.append({"name": adder, "tag": "M", "origin": "{}".format(nation_abrev[i])},
+                        df = df.append({"name": adder, "tag": "M", "origin": origins},
                                        ignore_index=True)
                     else:
-                        df = df.append({"name": adder, "tag": "F", "origin": "{}".format(nation_abrev[i])},
+                        df = df.append({"name": adder, "tag": "F", "origin": origins},
                                        ignore_index=True)
     df = clean_df(df)
     return df
@@ -313,7 +328,7 @@ def start_tests(file_in, nation):
         for i in range(len(nation_abrev)): #Goes through each nationality present
 
             #print(i) Test
-            df_temp = df_arg.loc[df_arg["origin"] == "{}".format(nation_abrev[i])] #Loads temp dataframe filled with nationality
+            df_temp = df_arg.loc[df_arg["origin"]] #Loads temp dataframe filled with nationality
             print(df_temp)
             if df_temp.size > 99: #If the temp file is bigger than 10, assume the DF is correctly loaded
                 print("Size is adequate")
@@ -331,10 +346,10 @@ def start_tests(file_in, nation):
 def translit_non_latin(df):
     #This function will first add names that are in non latin cases, eg. russian names and
     #Will translate them along with any other names that already exist in the DF
-    non_latin_languages = ["RUS", "SRB"]
+    non_latin_languages = ["Russia", "Serbia"]
     print("*\n*\n*\n*\n*\n")
     for column in df.columns:
-        df_copy = df.loc[(df["origin"] == "SRB") | (df["origin"] == "RUS")] #Add any other languages that may use Cyrillic Script
+        df_copy = df.loc[(df["origin"] == "Serbia") | (df["origin"] == "Russia")] #Add any other languages that may use Cyrillic Script
         for index, row in df_copy.iterrows():
             name = row[0]
             language_code = detect_language(name)
