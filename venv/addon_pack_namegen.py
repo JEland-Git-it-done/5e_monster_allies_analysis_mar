@@ -48,10 +48,15 @@ def splice_names():
     #Please note that most of the names involved in this function are infact latin-ised names, and cover countries that have already been found via web scraping
     df = form_international_names()
     df_bs4 = form_latin_name_dict()
-    print(df_bs4.loc[df_bs4["origin"] == "IRA"])
+    test_df = df_bs4.loc[df_bs4["origin"] == "IRA"]
+    print(pd.unique(test_df["name"]))
     frames = [df, df_bs4]
+    #standardize_files(frames)
     df_merge = pd.concat(frames)
     print(df_merge)
+    print(pd.unique(df_merge["origin"]))
+    #Implements standardization between the two tables
+    return df_merge
 
 
 def form_international_names(): #add npc_df as argument
@@ -79,6 +84,7 @@ def form_international_names(): #add npc_df as argument
 
         df_target = format_df_target(df_target)
         new_df = pd.DataFrame(columns=["name", "tag", "origin"])
+
 
         #need to put in argument for new_columns checker, could assign numbers and change after
         start = time.time()
@@ -120,10 +126,11 @@ def check_if_exists():
         test_df = pd.read_excel("firstnames_cleaned.xlsx")
         sample = test_df.sample(20)
         print(sample)
-        print(test_df[50:80], test_df[4000:4001])
+        #print(test_df[50:80], test_df[4000:4001])
         case1, case2, case3, case4 = test_df.iloc[60], test_df.iloc[70], test_df.iloc[80], test_df.iloc[4000]
-        print(case1["name"], case2["name"], case3["name"])
-        if case1["name"] == "Abay" and case2["name"] == "Abbondanzio" and case3["name"] == "Abdel-Fattah" and case4["name"] == "Bao-Lian":
+        #print(case1["name"], case2["name"], case3["name"])
+        if case1["name"] == "Abay" and case2["name"] == "Abbondanzio" \
+                and case3["name"] == "Abdel-Fattah" and case4["name"] == "Bao-Lian":
             print("The cleaned file is valid")
             outcome = True
 
@@ -246,22 +253,24 @@ def add_names(df, name_div, name_fin, nation_abrev, nations, probable_formats):
             soup = BeautifulSoup(file.content, "html.parser")
             rec_data = soup.find_all(probable_formats[i])
             item_txt = ""
+            origins = []
             for item in rec_data:
                 item_txt = item.string
                 if item_txt is None:
                     #print(item.text)
                     item_split = item.text.split(" ")
                     item_txt = item_split[0]
+                    item_txt = re.sub( r"([A-Z])", r" \1", item_txt).split()
+                    item_txt = item_txt[0]
                     item_txt = item_txt.strip()
-                #   temp_item = item.findChildren()
-                #  print(temp_item.string)
                 print(item.string)
                 print("Divided text: ", item_txt)
                 if item_txt == name_div[i - 1]:  # First female entry
                     divide = True
                 if item_txt == name_fin[i]:  # Last acceptable entry
                     adder = str(item_txt)
-                    df = df.append({"name": adder, "tag": "F", "origin": "{}".format(nation_abrev[i])},
+                    origins = nation_abrev[i]
+                    df = df.append({"name": adder, "tag": "F", "origin": origins},
                                    ignore_index=True)
                     break
 
