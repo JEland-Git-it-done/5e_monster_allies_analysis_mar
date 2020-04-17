@@ -43,7 +43,25 @@ def read_surnames():
     #https://en.wiktionary.org/wiki/Category:Surnames_by_language
     #This function aims to go through each of the catagories listed in the above link, goes through each entry and tries to assign them to one of the pre existing lists
     print("Attempting to webscrape surnames, along with some straggeler forenames")
-
+    #The following names are relatively populated
+    valid_names = []
+    bins = ["Asian", "African", "European", "Iberian", "Russian", "Caucausus", "Balkan"]
+    file = requests.get("https://en.wiktionary.org/wiki/Category:Surnames_by_language")
+    soup = BeautifulSoup(file.content, "html.parser")
+    div_tag = soup.find_all("div", {"class": "CategoryTreeItem"})
+    for article in div_tag:
+        print(article)
+        span_tag = article.find_all("span", {"dir": "ltr"})[0] #The third span element holds the length of the
+        span_checker = span_tag.string.split(",")[1]
+        print(span_tag)
+        span_checker = re.sub('[^0-9]','', span_checker)
+        print(int(span_checker))
+        if int(span_checker) >= 25:
+            valid_names.append(article.a.text)
+            print("Valid names include: ", valid_names)
+        print(span_checker)
+        print(article, article.a, "\n\n{}".format(article.a.text))
+    print(valid_names)
 def splice_names():
     #Please note that most of the names involved in this function are infact latin-ised names, and cover countries that have already been found via web scraping
     df = form_international_names()
@@ -51,8 +69,8 @@ def splice_names():
 
     frames = [df, df_bs4]
     df_merge = pd.concat(frames)
-    df_merge.dropna()
-    df_merge.to_excel("firstnames_merged")
+    df_merge.dropna(axis=0, how='any', thresh=None, subset=None, inplace=False)
+    df_merge.to_excel("firstnames_merged.xlsx", index=None)
     #print(df_merge)
 
     print("Checking if name exists more than once")
@@ -197,7 +215,7 @@ def form_latin_name_dict():
     if os.path.exists("npcs.csv") or os.path.exists("npcs.xlsx"):
         print("File already exists")
         try:
-            print("We're getting there")
+            #print("We're getting there")
             df_csv, df_xlsx= pd.read_csv("npcs.csv"), pd.read_excel("npcs.xlsx")
             file_list = [df_csv, df_xlsx]
             #print("Starting the soup is recommended before taking the test\nIf you wish to skip this step please ensure that everything is working in order...")
@@ -327,24 +345,22 @@ def clean_df(df):
 def start_tests(file_in, nation):
     print("Starting test case ...\nUsing the following values", file_in, nation)
     nation_abrev = nation
-    print(nation_abrev)
     correct_responses = []
     for i in range(len(file_in)): #Goes through both files (csv and excel)
         df_arg = file_in[i] #Created dataframe
-        print(df_arg)
         for i in range(len(nation_abrev)): #Goes through each nationality present
 
             #print(i) Test
             df_temp = df_arg.loc[df_arg["origin"] == nation_abrev[i]] #Loads temp dataframe filled with nationality
             if df_temp.size > 99: #If the temp file is bigger than 10, assume the DF is correctly loaded
-                print("Size is adequate")
+                print("Size of names relating to : {} is adequate".format(nation_abrev[i]))
                 correct_responses.append(i) #adds to list
             else:
                 print("Origin is missing names, would recommend adding files")
                 return False
 
     if len(correct_responses) == len(nation_abrev) * 2:
-        print("Tests appear to be fine, can skip the BS4 implementation")
+        print("Tests appear to be fine, you can skip the BS4 implementation")
         return True
     else:
         return False
@@ -385,6 +401,6 @@ def form_files(data):
 
 
 #df = form_latin_name_dict()
-df = splice_names()
-
-print(df)
+#df = splice_names()
+#print(df)
+read_surnames()
