@@ -52,17 +52,15 @@ def splice_names():
     frames = [df, df_bs4]
     df_merge = pd.concat(frames)
     df_merge.dropna()
-
-    print(df_merge)
+    df_merge.to_excel("firstnames_merged")
+    #print(df_merge)
 
     print("Checking if name exists more than once")
     counts = df["origin"].value_counts()
     counts = df[df["origin"].isin(counts.index[counts.gt(2)])]
-    print(counts)
+    #print(counts)
     print(counts.tail(40))
-    #mutable_list = pd.unique(df_merge["origin"])
-    #print(mutable_list)
-    #Implements standardization between the two tables
+
     return df_merge
 
 
@@ -134,8 +132,7 @@ def form_international_names(): #add npc_df as argument
 
 def make_cross_compatible(new_df):
     new_df["name"] = new_df["name"].str.replace("+", "-")
-    new_df["tag"] = new_df["tag"].str.replace("1F", "WF").replace("?F",
-                                                                  "WF")  # Weighted Female - most likely to be female
+    new_df["tag"] = new_df["tag"].str.replace("1F", "WF").replace("?F", "WF")  # Weighted Female - most likely to be female
     new_df["tag"] = new_df["tag"].str.replace("1M", "?M").replace("?M", "WM")  # Weighted Male - most likely to be male
     new_df["tag"] = new_df["tag"].str.replace("?", "NN")  # name is neutral, non last name
 
@@ -200,17 +197,17 @@ def form_latin_name_dict():
     if os.path.exists("npcs.csv") or os.path.exists("npcs.xlsx"):
         print("File already exists")
         try:
+            print("We're getting there")
             df_csv, df_xlsx= pd.read_csv("npcs.csv"), pd.read_excel("npcs.xlsx")
             file_list = [df_csv, df_xlsx]
-            test_case = start_tests(file_list, nation_abrev)
+            #print("Starting the soup is recommended before taking the test\nIf you wish to skip this step please ensure that everything is working in order...")
 
-            #form_non_latin(file_list)
-            print("Test result: ", test_case)
-            df_csv = clean_df(df_csv)
+            test_result = start_tests(file_list, nation_abrev)
+            print("Test result: ", test_result)
             test_case = start_soup(test_case)
+            #form_non_latin(file_list)
+            df_csv = clean_df(df_csv)
             df_stable = translit_non_latin(df_csv)
-
-
             #If you decide you need to add new names, please ensure you have added the following things
             #1. The nations name, relative to the wikipedia article, for instance https://en.wiktionary.org/wiki/Appendix:Russian_given_names
             #2. The nations abreviation, eg ENG for english
@@ -328,17 +325,17 @@ def clean_df(df):
 
 
 def start_tests(file_in, nation):
-    print("Starting test case ...")
+    print("Starting test case ...\nUsing the following values", file_in, nation)
     nation_abrev = nation
     print(nation_abrev)
     correct_responses = []
     for i in range(len(file_in)): #Goes through both files (csv and excel)
         df_arg = file_in[i] #Created dataframe
+        print(df_arg)
         for i in range(len(nation_abrev)): #Goes through each nationality present
 
             #print(i) Test
-            df_temp = df_arg.loc[df_arg["origin"]] #Loads temp dataframe filled with nationality
-            print(df_temp)
+            df_temp = df_arg.loc[df_arg["origin"] == nation_abrev[i]] #Loads temp dataframe filled with nationality
             if df_temp.size > 99: #If the temp file is bigger than 10, assume the DF is correctly loaded
                 print("Size is adequate")
                 correct_responses.append(i) #adds to list
