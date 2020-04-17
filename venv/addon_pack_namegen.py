@@ -48,21 +48,28 @@ def splice_names():
     #Please note that most of the names involved in this function are infact latin-ised names, and cover countries that have already been found via web scraping
     df = form_international_names()
     df_bs4 = form_latin_name_dict()
-    test_df = df_bs4.loc[df_bs4["origin"] == "IRA"]
-    print(pd.unique(test_df["name"]))
+
     frames = [df, df_bs4]
-    #standardize_files(frames)
     df_merge = pd.concat(frames)
+    df_merge.dropna()
+
     print(df_merge)
+
+    print("Checking if name exists more than once")
+    counts = df["origin"].value_counts()
+    counts = df[df["origin"].isin(counts.index[counts.gt(2)])]
+    print(counts)
+    print(counts.tail(40))
     #mutable_list = pd.unique(df_merge["origin"])
     #print(mutable_list)
     #Implements standardization between the two tables
     return df_merge
 
 
+
 def form_international_names(): #add npc_df as argument
     #Due to a distinct lack of international names, outside of europe from the previous sources
-    #This function will use the first name database provided by Matthias Winkelmann and Jörg MICHAEL at the following adress
+    #This function will use the first name database provided by Matthias Winkelmann and Jörg MICHAEL at the following address
     #https://github.com/MatthiasWinkelmann/firstname-database
 
     exists = check_if_exists()
@@ -95,20 +102,22 @@ def form_international_names(): #add npc_df as argument
 
         for i in range(len(df_target)):
             print("Testing second iterration")
-            origins = []
             text_arg = df_target.loc[i, "text"].split(",")
             text_arg[-1] = "0"
             text_temp = text_arg[2:]
             for p in range(len(text_temp)):
                 if text_temp[p] != "0":
-                    origins.append(new_cols[p+2]) #The +2 Counteracts the slice action
+                    origins = new_cols[p+2] #The +2 Counteracts the slice action
+                    print(text_arg, origins, "\n", new_cols)
+                    print("Testing aspects:", len(text_arg), len(new_cols))
+                    new_df = new_df.append({"name": text_arg[0], "tag": text_arg[1], "origin": origins}, ignore_index=True)
+                    #By placing the DF assignment here the file should create multiple versions of the same name with individual origins assigned to them, which will speed up later search functions
                     print(p)
 
             #Although inline text version is quicker, there are issues with duplicate values origins = [new_cols[text_arg.index(b)] for b in text_arg[2:] if b != "0"]
             #This should eliminate any duplicate values inside of the list
-            print(text_arg, origins, "\n", new_cols)
-            print("Testing aspects:", len(text_arg), len(new_cols))
-            new_df = new_df.append({"name": text_arg[0], "tag": text_arg[1], "origin": origins}, ignore_index=True)
+
+
 
         end = time.time()
         print(new_df, pd.unique(new_df["tag"]))
@@ -140,9 +149,9 @@ def check_if_exists():
         print(sample)
         #print(test_df[50:80], test_df[4000:4001])
         case1, case2, case3, case4 = test_df.iloc[60], test_df.iloc[70], test_df.iloc[80], test_df.iloc[4000]
-        #print(case1["name"], case2["name"], case3["name"])
-        if case1["name"] == "Abay" and case2["name"] == "Abbondanzio" \
-                and case3["name"] == "Abdel-Fattah" and case4["name"] == "Bao-Lian":
+        print(case1["name"], case2["name"], case3["name"], case4["name"])
+        if case1["name"] == "Aart" and case2["name"] == "Aatu" \
+                and case3["name"] == "Abaz" and case4["name"] == "Annamarie":
             print("The cleaned file is valid")
             outcome = True
 
@@ -268,9 +277,8 @@ def add_names(df, name_div, name_fin, nation_abrev, nations, probable_formats):
             rec_data = soup.find_all(probable_formats[i])
             item_txt = ""
             for item in rec_data:
-                origins = []
                 item_txt = item.string
-                origins.append(nation_abrev[i])
+                origins = nation_abrev[i]
                 if item_txt is None:
                     #print(item.text)
                     item_split = item.text.split(" ")
@@ -322,6 +330,7 @@ def clean_df(df):
 def start_tests(file_in, nation):
     print("Starting test case ...")
     nation_abrev = nation
+    print(nation_abrev)
     correct_responses = []
     for i in range(len(file_in)): #Goes through both files (csv and excel)
         df_arg = file_in[i] #Created dataframe
