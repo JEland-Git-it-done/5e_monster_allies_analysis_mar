@@ -39,29 +39,50 @@ def italian_surnames(): #This function is a test case of reading a wikipedia lis
     df["name"] = df["name"].str.replace("[^\w\s]", "")
     print(df.tail(60))
     return df
+def soup_surnames():
+    print("Starting Soup")
+    bins = ["Asian", "African", "European", "Iberian", "Russian", "Caucausus", "Balkan"]
+    surname_urls = read_surnames()
+    print("Surname arguments are as follows: ", surname_urls)
+    for key, value in surname_urls.items():
+        print(key, value)
+        if value == 'https://en.wiktionary.org/wiki/Category:Surnames_by_language':
+            print("Value is from wiktionary")
+        elif value == 'https://en.wikipedia.org/wiki/Category:Surnames_by_language':
+            print("Value is from wikipedia")
+
 def read_surnames():
     #https://en.wiktionary.org/wiki/Category:Surnames_by_language
     #This function aims to go through each of the catagories listed in the above link, goes through each entry and tries to assign them to one of the pre existing lists
     print("Attempting to webscrape surnames, along with some straggeler forenames")
     #The following names are relatively populated
-    valid_names = []
-    bins = ["Asian", "African", "European", "Iberian", "Russian", "Caucausus", "Balkan"]
-    file = requests.get("https://en.wiktionary.org/wiki/Category:Surnames_by_language")
-    soup = BeautifulSoup(file.content, "html.parser")
-    div_tag = soup.find_all("div", {"class": "CategoryTreeItem"})
-    for article in div_tag:
-        print(article)
-        span_tag = article.find_all("span", {"dir": "ltr"})[0] #The third span element holds the length of the
-        span_checker = span_tag.string.split(",")[1]
-        print(span_tag)
-        span_checker = re.sub('[^0-9]','', span_checker)
-        print(int(span_checker))
-        if int(span_checker) >= 25:
-            valid_names.append(article.a.text)
-            print("Valid names include: ", valid_names)
-        print(span_checker)
-        print(article, article.a, "\n\n{}".format(article.a.text))
+    valid_names = {}
+    files = ["https://en.wiktionary.org/wiki/Category:Surnames_by_language", "https://en.wikipedia.org/wiki/Category:Surnames_by_language"]
+    for file_url in files:
+
+        file = requests.get(file_url)
+        print(file_url)
+        soup = BeautifulSoup(file.content, "html.parser")
+        div_tag = soup.find_all("div", {"class": "CategoryTreeItem"})
+        for article in div_tag:
+            #print(article)
+            #print(file_url)
+            span_tag = article.find_all("span", {"dir": "ltr"})[0] #The first span element with this tag holds the length of the article
+            if "," in span_tag.string:
+                span_checker = span_tag.string.split(",")[1]
+            else:
+                span_checker = span_tag.string
+
+            span_checker = re.sub('[^0-9]','', span_checker)
+            if int(span_checker) >= 25:
+                valid_names.update({article.a.text: file_url})
+                #print("Valid names include: ", valid_names)
+            #print(span_checker)
+            #print(article, article.a, "\n\n{}".format(article.a.text))
+        #print(valid_names)
     print(valid_names)
+    return valid_names
+
 def splice_names():
     #Please note that most of the names involved in this function are infact latin-ised names, and cover countries that have already been found via web scraping
     df = form_international_names()
@@ -111,11 +132,8 @@ def form_international_names(): #add npc_df as argument
 
         df_target = format_df_target(df_target)
         new_df = pd.DataFrame(columns=["name", "tag", "origin"])
-
-
         #need to put in argument for new_columns checker, could assign numbers and change after
         start = time.time()
-
         for i in range(len(df_target)):
             print("Testing second iterration")
             text_arg = df_target.loc[i, "text"].split(",")
@@ -132,21 +150,13 @@ def form_international_names(): #add npc_df as argument
 
             #Although inline text version is quicker, there are issues with duplicate values origins = [new_cols[text_arg.index(b)] for b in text_arg[2:] if b != "0"]
             #This should eliminate any duplicate values inside of the list
-
-
-
         end = time.time()
         print(new_df, pd.unique(new_df["tag"]))
         make_cross_compatible(new_df)
-
-
         print("Time elapsed: ", start - end)
-
         print(pd.unique(new_df["tag"]))
         new_df.to_excel("firstnames_cleaned.xlsx", index=False)
-
         return new_df
-
 
 def make_cross_compatible(new_df):
     new_df["name"] = new_df["name"].str.replace("+", "-")
@@ -197,6 +207,11 @@ def refactor_columns(col):
     nations.remove("etc.")
     return nations
 
+def form_internationa_name_dict():
+    #This function uses wikipedia and wiktionaries catagory tags, as the layout is standardised in both
+    #Wikipedia: https://en.wikipedia.org/wiki/Category:Given_names_by_culture - Wiktionary: https://en.wiktionary.org/w/index.php?title=Category:Given_names_by_language&subcatuntil=Tongan%0ATongan+given+names#mw-subcategories
+    print("Generating international names")
+
 
 def form_latin_name_dict():
     test_case = False
@@ -222,10 +237,7 @@ def form_latin_name_dict():
 
             test_result = start_tests(file_list, nation_abrev)
             print("Test result: ", test_result)
-            test_case = start_soup(test_case)
-            #form_non_latin(file_list)
-            df_csv = clean_df(df_csv)
-            df_stable = translit_non_latin(df_csv)
+
             #If you decide you need to add new names, please ensure you have added the following things
             #1. The nations name, relative to the wikipedia article, for instance https://en.wiktionary.org/wiki/Appendix:Russian_given_names
             #2. The nations abreviation, eg ENG for english
@@ -233,6 +245,11 @@ def form_latin_name_dict():
             #4. The first female name to change the gender type from male to female
             #5. The last name needed, as an end point (As wikipedia often adds extra things to the end of a file using
             #The HTML type that is being read by BS4)
+            test_case = start_soup(test_case)
+            #form_non_latin(file_list)
+            df_csv = clean_df(df_csv)
+            df_stable = translit_non_latin(df_csv)
+
             if test_case == True:
                 #Move function here
                 print("Starting up Beautiful Soup")
@@ -403,4 +420,4 @@ def form_files(data):
 #df = form_latin_name_dict()
 #df = splice_names()
 #print(df)
-read_surnames()
+soup_surnames()
