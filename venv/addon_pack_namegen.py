@@ -39,17 +39,57 @@ def italian_surnames(): #This function is a test case of reading a wikipedia lis
     df["name"] = df["name"].str.replace("[^\w\s]", "")
     print(df.tail(60))
     return df
+
 def soup_surnames():
     print("Starting Soup")
+    df = pd.DataFrame(columns=["name", "tag", "origin"])
     bins = ["Asian", "African", "European", "Iberian", "Russian", "Caucausus", "Balkan"]
     surname_urls = read_surnames()
     print("Surname arguments are as follows: ", surname_urls)
     for key, value in surname_urls.items():
-        print(key, value)
+        nationality = key.split(" ")[0]
         if value == 'https://en.wiktionary.org/wiki/Category:Surnames_by_language':
-            print("Value is from wiktionary")
+            key_format = "https://en.wiktionary.org/wiki/Category:{}".format(key)
+            df = read_wiki(df, key_format, nationality)
+
+
         elif value == 'https://en.wikipedia.org/wiki/Category:Surnames_by_language':
             print("Value is from wikipedia")
+            key_format = "https://en.wikipedia.org/wiki/Category:{}".format(key)
+            df = read_wiki(df, key_format, nationality)
+            #file = requests.get("https://en.wiktionary.org/wiki/Category:{}".format(key))
+            #print(file_url)
+            #soup = BeautifulSoup(file.content, "html.parser")
+    print(df)
+
+
+def read_wiki(df, key, origins):
+
+    print("Value is from wiktionary")
+    file = requests.get(key)
+    soup = BeautifulSoup(file.content, "html.parser")
+    # First things first the soup needs to search if there is a next page
+    div_tag = soup.find_all("div", {"id": "mw-pages"})
+    for tag in div_tag:
+        list_tag = tag.find_all("li")
+        for name in list_tag:
+            name = name.string.split(" ")[0] #Incase of any disambiguations or other issues
+            print(name,"\n", origins)
+            df = df.append({"name": name, "tag": "N", "origin": origins}, ignore_index=True)
+        a_tag = tag.find_all("a", href=True)
+        print(a_tag[0].string)
+        for a_link in a_tag:
+            if "next page" in a_link.string:
+                print("There is a page in the tag: https://en.wiktionary.org{}".format(a_link["href"]))
+                df = read_wiki(df, "https://en.wiktionary.org{}".format(a_link["href"]), origins)
+                break
+
+
+
+
+    return df
+
+
 
 def read_surnames():
     #https://en.wiktionary.org/wiki/Category:Surnames_by_language
@@ -59,7 +99,6 @@ def read_surnames():
     valid_names = {}
     files = ["https://en.wiktionary.org/wiki/Category:Surnames_by_language", "https://en.wikipedia.org/wiki/Category:Surnames_by_language"]
     for file_url in files:
-
         file = requests.get(file_url)
         print(file_url)
         soup = BeautifulSoup(file.content, "html.parser")
