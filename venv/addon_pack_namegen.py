@@ -45,25 +45,28 @@ def soup_surnames():
     df = pd.DataFrame(columns=["name", "tag", "origin"])
     bins = ["Asian", "African", "European", "Iberian", "Russian", "Caucausus", "Balkan"]
     surname_urls = read_surnames()
-    print("Surname arguments are as follows: ", surname_urls)
+    #print("Surname arguments are as follows: ", surname_urls)
     for key, value in surname_urls.items():
         nationality = key.split(" ")[0]
+        print(key, value)
         if value == 'https://en.wiktionary.org/wiki/Category:Surnames_by_language':
             key_format = "https://en.wiktionary.org/wiki/Category:{}".format(key)
-            df = read_wiki(df, key_format, nationality)
+            wiktionary_page = "https://en.wiktionary.org"
+            df = read_wiki(df, key_format, nationality, wiktionary_page)
 
 
         elif value == 'https://en.wikipedia.org/wiki/Category:Surnames_by_language':
             print("Value is from wikipedia")
             key_format = "https://en.wikipedia.org/wiki/Category:{}".format(key)
-            df = read_wiki(df, key_format, nationality)
+            wiki_page = "https://en.wikipedia.org"
+            df = read_wiki(df, key_format, nationality, wiki_page)
             #file = requests.get("https://en.wiktionary.org/wiki/Category:{}".format(key))
             #print(file_url)
             #soup = BeautifulSoup(file.content, "html.parser")
     print(df)
 
 
-def read_wiki(df, key, origins):
+def read_wiki(df, key, origins, page_type):
 
     print("Value is from wiktionary")
     file = requests.get(key)
@@ -81,7 +84,7 @@ def read_wiki(df, key, origins):
         for a_link in a_tag:
             if "next page" in a_link.string:
                 print("There is a page in the tag: https://en.wiktionary.org{}".format(a_link["href"]))
-                df = read_wiki(df, "https://en.wiktionary.org{}".format(a_link["href"]), origins)
+                df = read_wiki(df, page_type + a_link["href"], origins, page_type)
                 break
 
 
@@ -108,7 +111,8 @@ def read_surnames():
             #print(file_url)
             span_tag = article.find_all("span", {"dir": "ltr"})[0] #The first span element with this tag holds the length of the article
             if "," in span_tag.string:
-                span_checker = span_tag.string.split(",")[1]
+                span_checker = span_tag.string.split(",", 1)[1]
+
             else:
                 span_checker = span_tag.string
 
