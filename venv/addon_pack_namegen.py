@@ -1,7 +1,7 @@
 import pandas as pd; import numpy as np;
 import requests; import os; import re; import json
 from bs4 import BeautifulSoup
-from transliterate import translit, detect_language; import time
+from transliterate import translit, detect_language; import time; import pinyin; import translators as tl
 
 
 
@@ -41,6 +41,11 @@ def italian_surnames(): #This function is a test case of reading a wikipedia lis
     df["name"] = df["name"].str.replace("[^\w\s]", "")
     print(df.tail(60))
     return df
+def try_translate():
+    chinese_example = ['志塚', '地頭方', '蔀', '品川', '品田', '詩乃', '篠崎', '忍田', '篠田']
+    for i in chinese_example:
+        print(pinyin.get(i, format="strip", delimiter=" "))
+    arab_example = ['زندی', 'زنگنه', 'سازگار', 'ساعتچی', 'سربندی', 'سلیمانی', 'سلیمی', 'سمیعی']
 
 def soup_surnames():
     #is_valid = False
@@ -86,6 +91,8 @@ def soup_surnames():
         df.to_excel("surnames_cleaned.xlsx", index=False)
         print(df)
         print(pd.unique(df["name"]))
+        big_list = pd.unique(df["name"])
+        print(list(big_list))
         return df
 
 
@@ -485,4 +492,5 @@ def form_files(data):
 #df = form_latin_name_dict()
 #df = splice_names()
 #print(df)
-soup_surnames()
+#soup_surnames()
+try_translate()
