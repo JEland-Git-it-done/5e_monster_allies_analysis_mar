@@ -13,6 +13,8 @@ from transliterate import translit, detect_language; import time
 #Any information taken from https://www.europeandataportal.eu is being used under the Creative Commons Share-Alike Attribution Licence (CC-BY-SA), none is currently being used.
 #Arcane name set seems like a useful idea, see text below
 #Look into GeoNames dataset found here, https://github.com/awesomedata/awesome-public-datasets , could be used for expanded town name generator
+#Possible use argument for this dataset https://github.com/smashew/NameDatabases/tree/master/NamesDatabases
+#Use in conjunction with the place names loaded by geonames
 '''
 Courtesy of u/Alazypanda -
 If need random fantastical sounding names I quite literally take the "generic" or chemical names of medication
@@ -41,29 +43,50 @@ def italian_surnames(): #This function is a test case of reading a wikipedia lis
     return df
 
 def soup_surnames():
-    print("Starting Soup")
-    df = pd.DataFrame(columns=["name", "tag", "origin"])
-    bins = ["Asian", "African", "European", "Iberian", "Russian", "Caucausus", "Balkan"]
-    surname_urls = read_surnames()
-    #print("Surname arguments are as follows: ", surname_urls)
-    for key, value in surname_urls.items():
-        nationality = key.split(" ")[0]
-        print(key, value)
-        if value == 'https://en.wiktionary.org/wiki/Category:Surnames_by_language':
-            key_format = "https://en.wiktionary.org/wiki/Category:{}".format(key)
-            wiktionary_page = "https://en.wiktionary.org"
-            df = read_wiki(df, key_format, nationality, wiktionary_page)
+    #is_valid = False
+    if os.path.exists("surnames_cleaned_complete.xlsx"):
+        #Implements checks
+        df = pd.read_csv("surnames_cleaned.xlsx")
+        non_valid_names = df.loc[df["name"].str.contains("Appendix|learn more|previous", na=False)]
+        df.drop(non_valid_names, inplace=True)
+        print(df)
+        print(pd.unique(df["name"]))
+        return df
+    else:
+        print("Starting Soup")
+        df = pd.DataFrame(columns=["name", "tag", "origin"])
+        bins = ["Asian", "African", "European", "Iberian", "Russian", "Caucausus", "Balkan"]
+        surname_urls = read_surnames()
+        #print("Surname arguments are as follows: ", surname_urls)
+        for key, value in surname_urls.items():
+            try:
+                if "-" in key:
+                    nationality = key.split("-")[0]
+                else:
+                    nationality = key.split(" ")[0]
+            except:
+                pass
+            print(key, value)
+            if value == 'https://en.wiktionary.org/wiki/Category:Surnames_by_language':
+                key_format = "https://en.wiktionary.org/wiki/Category:{}".format(key)
+                wiktionary_page = "https://en.wiktionary.org"
+                df = read_wiki(df, key_format, nationality.strip(), wiktionary_page)
 
 
-        elif value == 'https://en.wikipedia.org/wiki/Category:Surnames_by_language':
-            print("Value is from wikipedia")
-            key_format = "https://en.wikipedia.org/wiki/Category:{}".format(key)
-            wiki_page = "https://en.wikipedia.org"
-            df = read_wiki(df, key_format, nationality, wiki_page)
-            #file = requests.get("https://en.wiktionary.org/wiki/Category:{}".format(key))
-            #print(file_url)
-            #soup = BeautifulSoup(file.content, "html.parser")
-    print(df)
+            elif value == 'https://en.wikipedia.org/wiki/Category:Surnames_by_language':
+                print("Value is from wikipedia")
+                key_format = "https://en.wikipedia.org/wiki/Category:{}".format(key)
+                wiki_page = "https://en.wikipedia.org"
+                df = read_wiki(df, key_format, nationality.strip(), wiki_page)
+                #file = requests.get("https://en.wiktionary.org/wiki/Category:{}".format(key))
+                #print(file_url)
+                #soup = BeautifulSoup(file.content, "html.parser")
+        #Clean out dataframe
+        print("Printing dataframe: \n\n\n", df)
+        df.to_excel("surnames_cleaned.xlsx", index=False)
+        print(df)
+        print(pd.unique(df["name"]))
+        return df
 
 
 def read_wiki(df, key, origins, page_type):
@@ -78,7 +101,10 @@ def read_wiki(df, key, origins, page_type):
         for name in list_tag:
             name = name.string.split(" ")[0] #Incase of any disambiguations or other issues
             print(name,"\n", origins)
-            df = df.append({"name": name, "tag": "N", "origin": origins}, ignore_index=True)
+            if any(re.findall(r"Appendix|learn more|previous", name, re.IGNORECASE)):
+                print("Invalid name: ", name)
+            else:
+                df = df.append({"name": name, "tag": "N", "origin": origins}, ignore_index=True)
         a_tag = tag.find_all("a", href=True)
         print(a_tag[0].string)
         for a_link in a_tag:
@@ -86,10 +112,7 @@ def read_wiki(df, key, origins, page_type):
                 print("There is a page in the tag: https://en.wiktionary.org{}".format(a_link["href"]))
                 df = read_wiki(df, page_type + a_link["href"], origins, page_type)
                 break
-
-
-
-
+    print(df)
     return df
 
 
@@ -112,7 +135,6 @@ def read_surnames():
             span_tag = article.find_all("span", {"dir": "ltr"})[0] #The first span element with this tag holds the length of the article
             if "," in span_tag.string:
                 span_checker = span_tag.string.split(",", 1)[1]
-
             else:
                 span_checker = span_tag.string
 
@@ -134,7 +156,7 @@ def splice_names():
     frames = [df, df_bs4]
     df_merge = pd.concat(frames)
     df_merge.dropna(axis=0, how='any', thresh=None, subset=None, inplace=False)
-    df_merge.to_excel("firstnames_merged.xlsx", index=None)
+    df_merge.to_excel("firstnames_merged.xlsx", index=False)
     #print(df_merge)
 
     print("Checking if name exists more than once")
