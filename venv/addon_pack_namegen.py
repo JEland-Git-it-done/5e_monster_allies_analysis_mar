@@ -1,7 +1,10 @@
 import pandas as pd; import numpy as np;
 import requests; import os; import re; import json
 from bs4 import BeautifulSoup
-from transliterate import translit, detect_language; import time; import pinyin; import translators as tl
+from transliterate import translit, detect_language; import time; from alphabet_detector import AlphabetDetector
+
+
+
 
 
 
@@ -41,11 +44,7 @@ def italian_surnames(): #This function is a test case of reading a wikipedia lis
     df["name"] = df["name"].str.replace("[^\w\s]", "")
     print(df.tail(60))
     return df
-def try_translate():
-    chinese_example = ['志塚', '地頭方', '蔀', '品川', '品田', '詩乃', '篠崎', '忍田', '篠田']
-    for i in chinese_example:
-        print(pinyin.get(i, format="strip", delimiter=" "))
-    arab_example = ['زندی', 'زنگنه', 'سازگار', 'ساعتچی', 'سربندی', 'سلیمانی', 'سلیمی', 'سمیعی']
+
 
 def soup_surnames():
     #is_valid = False
@@ -73,13 +72,15 @@ def soup_surnames():
                 pass
             print(key, value)
             if value == 'https://en.wiktionary.org/wiki/Category:Surnames_by_language':
+                #Wiktionary names are in their original language, need to follow deeper to find the english prounouncation
                 key_format = "https://en.wiktionary.org/wiki/Category:{}".format(key)
                 wiktionary_page = "https://en.wiktionary.org"
+                #if key == "Arabic surnames" or key == "Persian surnames":
                 df = read_wiki(df, key_format, nationality.strip(), wiktionary_page)
 
 
             elif value == 'https://en.wikipedia.org/wiki/Category:Surnames_by_language':
-                print("Value is from wikipedia")
+
                 key_format = "https://en.wikipedia.org/wiki/Category:{}".format(key)
                 wiki_page = "https://en.wikipedia.org"
                 df = read_wiki(df, key_format, nationality.strip(), wiki_page)
@@ -95,33 +96,70 @@ def soup_surnames():
         print(list(big_list))
         return df
 
-
 def read_wiki(df, key, origins, page_type):
+    if page_type == "https://en.wiktionary.org":
+        problem_list = ["Arabic", "Hindi", "Persian", "Hebrew", "Telugu", "Chinese", "Japanese", "Korean"]
+        print("Value is from Wiktionary")
+        print("Looking for english variatey")
+        file = requests.get(key)
+        soup = BeautifulSoup(file.content, "html.parser")
+        div_tag = soup.find_all("div", {"id": "mw-pages"})
+        for tag in div_tag:
+            list_tag = tag.find_all("li")
+            for name in list_tag:
+                print(name,"\n", origins)
+                if origins not in problem_list:
+                    print("This name is using translatable characters")
+                    split_name = name.string.split(" ")[0]  # Incase of any disambiguations or other issues
+                    print(split_name)
+                    if any(re.findall(r"Appendix|learn more|previous", split_name, re.IGNORECASE)):
+                        print("Invalid name: ", split_name)
+                    else:
+                        df = df.append({"name": split_name, "tag": "N", "origin": origins}, ignore_index=True)
+                elif origins in problem_list:
+                    print(name.string.split(" ")[0], origins)
+                    split_name = find_latin_name(page_type, name.a["href"])
+                    print("English version of name: {}".format(split_name))
+                    df = df.append({"name": split_name, "tag": "N", "origin": origins}, ignore_index=True)
+        return df
+    elif page_type == "https://en.wikipedia.org":
+        print("Value is from Wikipedia")
+        file = requests.get(key)
+        soup = BeautifulSoup(file.content, "html.parser")
+        # First things first the soup needs to search if there is a next page
+        div_tag = soup.find_all("div", {"id": "mw-pages"})
+        for tag in div_tag:
+            list_tag = tag.find_all("li")
+            for name in list_tag:
+                name = name.string.split(" ")[0] #Incase of any disambiguations or other issues
+                print(name,"\n", origins)
+                if any(re.findall(r"Appendix|learn more|previous", name, re.IGNORECASE)):
+                    print("Invalid name: ", name)
+                else:
+                    df = df.append({"name": name, "tag": "N", "origin": origins}, ignore_index=True)
+            a_tag = tag.find_all("a", href=True)
+            print(a_tag[0].string)
+            for a_link in a_tag:
+                if "next page" in a_link.string:
+                    print("There is a page in the tag: https://en.wiktionary.org{}".format(a_link["href"]))
+                    df = read_wiki(df, page_type + a_link["href"], origins, page_type)
+                    break
 
-    print("Value is from wiktionary")
-    file = requests.get(key)
+        return df
+
+def find_latin_name(page, link):
+    names = []
+    possible_tags = ["headword-tr manual-tr tr Latn", "headword-tr tr Latn"]
+    file = requests.get(page+link)
     soup = BeautifulSoup(file.content, "html.parser")
-    # First things first the soup needs to search if there is a next page
-    div_tag = soup.find_all("div", {"id": "mw-pages"})
-    for tag in div_tag:
-        list_tag = tag.find_all("li")
-        for name in list_tag:
-            name = name.string.split(" ")[0] #Incase of any disambiguations or other issues
-            print(name,"\n", origins)
-            if any(re.findall(r"Appendix|learn more|previous", name, re.IGNORECASE)):
-                print("Invalid name: ", name)
-            else:
-                df = df.append({"name": name, "tag": "N", "origin": origins}, ignore_index=True)
-        a_tag = tag.find_all("a", href=True)
-        print(a_tag[0].string)
-        for a_link in a_tag:
-            if "next page" in a_link.string:
-                print("There is a page in the tag: https://en.wiktionary.org{}".format(a_link["href"]))
-                df = read_wiki(df, page_type + a_link["href"], origins, page_type)
-                break
-    print(df)
-    return df
 
+    for i in possible_tags:
+        try:
+            span_tag = soup.find_all("span", {"class": i})
+            names = span_tag[0].string.strip("()")
+        except:
+            pass
+    return names
 
 
 def read_surnames():
@@ -492,5 +530,6 @@ def form_files(data):
 #df = form_latin_name_dict()
 #df = splice_names()
 #print(df)
-#soup_surnames()
-try_translate()
+soup_surnames()
+
+
