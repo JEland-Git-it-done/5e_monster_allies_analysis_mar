@@ -1,4 +1,4 @@
-import pandas as pd; import numpy as np; import monster_analysis
+import pandas as pd; import numpy as np
 import sqlalchemy as sql; import string; import import_data
 #Pandas and sqlalchemy have to be initialised with the terminal, use pip install x to do so
 
@@ -15,7 +15,7 @@ non_compat_damage = {"Fire": "Cold", "Bludgeoning": "Piercing", "Necrotic": "Rad
 
 def witcherify_monster():
 
-    df_copy = monster_analysis.standard_dev_cr()
+    df_copy = pd.read_csv("cleaned_kfc_monstercopy.csv")
 
     # Lures needs to be improved, or can be added by the user using line interface, also needs to be made global
     # Lures could use creature types instead of names, to generalise the output
@@ -106,12 +106,14 @@ def mutate_monster(monster):
     monster["resistance"] = pd.Series([resistance])
     monster["invulnerability"] = pd.Series([invulnerability])
     monster["vulnerabilities"] = pd.Series([vulnerabilities])
+    print("\n\n")
+    end = input("press enter to close")
     return monster
 
 
 def refine_monster(cr_in):
     #This function aims to choose a random monster based on the CR set above
-    df_copy = monster_analysis.standard_dev_cr() #Uses standard dev to create a more relevant df
+    df_copy = pd.read_csv("cleaned_kfc_monstercopy.csv") #Uses standard dev to create a more relevant df
     df_refined = df_copy[round(df_copy["cr"]) == cr_in]
     df_refined = df_refined.drop(df_refined[df_refined["legendary"].values == "legendary"].index)
     df_refined = df_refined.drop(df_refined[df_refined["lair"].values == "lair"].index)
@@ -125,7 +127,8 @@ def refine_monster(cr_in):
     monster_selections = []
     refine_selections(df_refined, monster_list, monster_selections)
     monster_selections = choose_monster(df_refined, monster_list, monster_selections)
-    #print(monster_selections) Test
+    print("Test", monster_selections)
+
     return monster_selections
 
 
@@ -141,14 +144,14 @@ def choose_monster(df_refined, monster_list, monster_selections):
 def refine_selections(df_refined, monster_list, monster_selections):
     for i in range(len(monster_list)):
         monster_row = df_refined[df_refined.index == monster_list[i]]
-        print(monster_row[["name", "hp", "ac", "size", "src", "pagenum", "section", "environment", "alignment"]])
-        print("A {0} is a CR {1} monster with {2} hp that lives in the: {3}".format
-              (monster_row["name"].values, monster_row["cr"].values,
-               monster_row["hp"].values, monster_row["environment"].values))
+        #print(monster_row[["name", "hp", "ac", "size", "src", "pagenum", "section", "environment", "alignment"]])
+        #print("A {0} is a CR {1} monster with {2} hp that lives in the: {3}".format
+        #      (monster_row["name"].values, monster_row["cr"].values,
+        #       monster_row["hp"].values, monster_row["environment"].values))
         monster_selections.append("A {0} is a CR {1} monster with {2} hp that lives in the: {3}".format
               (monster_row["name"].values, monster_row["cr"].values,
                monster_row["hp"].values, monster_row["environment"].values))
-        print("\n***\n")
+        #print("\n***\n")
 
 
 witcherify_monster()
