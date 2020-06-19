@@ -16,8 +16,8 @@ give a deeper look into: </p>
 <p>Cleaning the data was an issue, with pandas converting some values that created outliers</p>
 <p>Once the data was cleaned the analysis began, with generic information being printed about the differing types of monsters
 </p>
-- Humanoids made up the largest amount of monster characters, so an adventurer can expect to fight vaguely human foes most of the time
-- Celestials are the toughest enemy on average, with a CR of 13 (Equivalent to a hard encounter for 4 level 10 characters!)
-- Unsurprisingly the Tarrasque came out as the meatiest monster, though there where a few suprises, with the meatiest fiend being a valid contender (Zariel for those looking for a fiendish Tarrasque replacement)
-- The group with the highest average initiative was the Celestials (those wings help):  however the group with the highest initiative in their standard deviation was the <b>OOZE</b> which came as a big surprise with a std of 3.52 initiative 
+<ul> Humanoids made up the largest amount of monster characters, so an adventurer can expect to fight vaguely human foes most of the time </ul>
+<ul> Celestials are the toughest enemy on average, with a CR of 13 (Equivalent to a hard encounter for 4 level 10 characters!) </ul>
+<ul> Unsurprisingly the Tarrasque came out as the meatiest monster, though there where a few suprises, with the meatiest fiend being a valid contender (Zariel for those looking for a fiendish Tarrasque replacement) </ul>
+<ul> The group with the highest average initiative was the Celestials (those wings help):  however the group with the highest initiative in their standard deviation was the <b>OOZE</b> which came as a big surprise with a std of 3.52 initiative</ul> 
 
